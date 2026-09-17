@@ -271,9 +271,15 @@ footer{ margin-top:30px; padding-top:14px; border-top:1px solid var(--line); fon
 
 /* Auth gate */
 #authGate{
-  position:fixed; inset:0; z-index:100; background:var(--bg); display:flex;
+  position:fixed; inset:0; z-index:100; background:var(--bg);
   align-items:center; justify-content:center; padding:24px;
 }
+/* #authGate's own display:flex would otherwise outrank the browser's
+   default [hidden]{display:none} rule (an ID selector beats an attribute
+   selector), so setting authGateEl.hidden = true in JS would silently do
+   nothing and the overlay would stay on screen forever. Scoping display:flex
+   to the *not*-hidden state avoids that fight entirely. */
+#authGate:not([hidden]){ display:flex; }
 .auth-card{
   width:100%; max-width:360px; background:var(--surface); border:1px solid var(--line);
   border-radius:16px; padding:28px 24px; box-shadow:var(--shadow);
@@ -554,7 +560,8 @@ footer{ margin-top:30px; padding-top:14px; border-top:1px solid var(--line); fon
     setAuthMsg('Working on it…', 'info');
     try {
       if (authMode === 'signin') {
-        const { error } = await sb.auth.signInWithPassword({ email, password });
+        const { data, error } = await sb.auth.signInWithPassword({ email, password });
+        console.log('[auth] signInWithPassword result', { hasSession: !!data?.session, hasUser: !!data?.user, error });
         if (error) throw error;
         // onAuthStateChange picks up the new session and starts the app.
       } else if (authMode === 'signup') {
@@ -1037,6 +1044,7 @@ footer{ margin-top:30px; padding-top:14px; border-top:1px solid var(--line); fon
   let appStarted = false;
 
   async function enterApp(session){
+    console.log('[auth] enterApp called', { userId: session.user && session.user.id, appStarted });
     currentUser = session.user;
     authGateEl.hidden = true;
     authSubmitBtnEl.disabled = false;
@@ -1052,13 +1060,16 @@ footer{ margin-top:30px; padding-top:14px; border-top:1px solid var(--line); fon
     try {
       await loadRemoteState(currentUser.id);
     } catch (e) {
+      console.error('[auth] loadRemoteState failed', e);
       setAuthMsg('Signed in, but could not load your data — check your connection and reload.', 'error');
     }
     subscribeRemoteState(currentUser.id);
     startApp();
+    console.log('[auth] enterApp finished, app started');
   }
 
   if (sb) sb.auth.onAuthStateChange(async (event, session) => {
+    console.log('[auth] onAuthStateChange', event, { hasSession: !!session, hasUser: !!(session && session.user) });
     // A password-reset link lands here as PASSWORD_RECOVERY with a valid
     // (temporary) session — show the "set a new password" form instead of
     // dropping straight into the app on someone else's half-finished login.
@@ -1071,6 +1082,7 @@ footer{ margin-top:30px; padding-top:14px; border-top:1px solid var(--line); fon
     if (session && session.user) {
       await enterApp(session);
     } else {
+      console.log('[auth] no session on this event — showing sign-in form', { event });
       currentUser = null;
       appStarted = false;
       if (realtimeChannel) { sb.removeChannel(realtimeChannel); realtimeChannel = null; }
