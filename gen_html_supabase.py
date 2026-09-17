@@ -64,6 +64,7 @@ html = r"""<!doctype html>
   --bike:#B07A0C; --bike-soft:#F3E6C9;
   --swim:#0E7C86; --swim-soft:#D9EDEE;
   --sc:#6B4E9E; --sc-soft:#E7E0F4;
+  --brick:#2F5AA0; --brick-soft:#DEE6F4;
   --rest:#8A9189; --rest-soft:#E7EAE4;
   --race:#B0281F; --race-soft:#F6DAD6;
   --shadow: 0 1px 2px rgba(28,36,32,.06), 0 8px 24px -12px rgba(28,36,32,.18);
@@ -78,6 +79,7 @@ html = r"""<!doctype html>
     --bike:#E4B94E; --bike-soft:#3A3018;
     --swim:#49CBD6; --swim-soft:#173537;
     --sc:#B39AF0; --sc-soft:#2E2647;
+    --brick:#7FA3E6; --brick-soft:#1E2A3E;
     --rest:#8A9891; --rest-soft:#232B27;
     --race:#F0776A; --race-soft:#3C201C;
     --shadow: 0 1px 2px rgba(0,0,0,.3), 0 12px 28px -14px rgba(0,0,0,.55);
@@ -92,6 +94,7 @@ html = r"""<!doctype html>
   --bike:#E4B94E; --bike-soft:#3A3018;
   --swim:#49CBD6; --swim-soft:#173537;
   --sc:#B39AF0; --sc-soft:#2E2647;
+  --brick:#7FA3E6; --brick-soft:#1E2A3E;
   --rest:#8A9891; --rest-soft:#232B27;
   --race:#F0776A; --race-soft:#3C201C;
   --shadow: 0 1px 2px rgba(0,0,0,.3), 0 12px 28px -14px rgba(0,0,0,.55);
@@ -266,6 +269,88 @@ details.panel[open] summary::after{ content:"–"; }
 .recommend-box{ padding:14px; border-radius:12px; background:var(--surface-2); border-left:4px solid var(--accent); font-size:13.5px; line-height:1.6; color:var(--ink); }
 .recommend-box b{ color:var(--ink); }
 
+/* ---- Custom workout tab ---- */
+.cw-slot-card{ border:1px solid var(--line); border-radius:12px; padding:12px 14px; background:var(--surface-2); margin-bottom:16px; }
+.cw-slot-card .cw-slot-head{ font-size:11px; text-transform:uppercase; letter-spacing:.05em; font-weight:700; color:var(--ink-faint); margin-bottom:4px; }
+.cw-slot-card .cw-slot-main{ font-family:"Big Shoulders Display"; font-weight:700; font-size:17px; }
+.cw-slot-card .cw-slot-sub{ font-size:12px; color:var(--ink-dim); margin-top:2px; }
+.cw-slot-pick{ margin-top:10px; }
+.cw-slot-pick select{ width:100%; box-sizing:border-box; padding:8px 10px; border-radius:8px; border:1px solid var(--line-strong); background:var(--bg); color:var(--ink); font-size:13px; font-family:inherit; }
+.cw-existing{ margin-top:10px; padding-top:10px; border-top:1px dashed var(--line-strong); font-size:12px; color:var(--ink-dim); }
+.cw-existing b{ color:var(--ink); }
+.cw-remove-btn{ margin-top:8px; background:none; border:none; color:var(--race); text-decoration:underline; cursor:pointer; font-size:12px; font-family:inherit; padding:0; }
+
+.cw-field-label{ display:block; font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-faint); font-weight:700; margin:14px 0 7px; }
+.cw-field-label.first{ margin-top:0; }
+.cw-ftp-note{ font-size:11.5px; color:var(--ink-faint); margin:6px 0 0; line-height:1.4; }
+
+.cw-pill-row{ display:flex; flex-wrap:wrap; gap:6px; }
+.cw-pill{
+  appearance:none; border:1px solid var(--line-strong); background:var(--surface); color:var(--ink-dim);
+  border-radius:999px; padding:7px 13px; font-size:12.5px; font-weight:600; font-family:inherit; cursor:pointer;
+}
+.cw-pill.active{ background:var(--accent); border-color:var(--accent); color:var(--accent-ink); }
+.cw-pill:disabled{ opacity:.35; cursor:not-allowed; }
+
+.cw-target-row{ display:flex; gap:8px; align-items:center; }
+.cw-seg{ display:flex; border:1px solid var(--line-strong); border-radius:9px; overflow:hidden; flex:0 0 auto; }
+.cw-seg button{
+  appearance:none; border:none; background:var(--surface); color:var(--ink-dim); padding:9px 12px; font-size:12.5px;
+  font-weight:600; font-family:inherit; cursor:pointer;
+}
+.cw-seg button.active{ background:var(--accent); color:var(--accent-ink); }
+.cw-seg button:disabled{ opacity:.35; cursor:not-allowed; }
+.cw-num-input{ flex:1; display:flex; align-items:stretch; border:1px solid var(--line-strong); border-radius:9px; overflow:hidden; }
+.cw-num-input input{
+  flex:1; min-width:0; border:none; padding:9px 10px; font-family:"IBM Plex Mono"; font-size:14px; background:var(--bg); color:var(--ink);
+}
+.cw-num-input input:focus{ outline:none; }
+.cw-num-input .cw-unit{ padding:9px 11px; background:var(--surface-2); color:var(--ink-faint); font-size:11.5px; font-weight:600; display:flex; align-items:center; }
+
+.cw-gen-btn{
+  width:100%; margin-top:18px; padding:11px; border-radius:9px; border:none; background:var(--accent); color:var(--accent-ink);
+  font-weight:700; font-size:14px; cursor:pointer; font-family:inherit;
+}
+.cw-gen-btn:hover{ filter:brightness(1.06); }
+
+.cw-preview{ margin-top:18px; border-top:1px dashed var(--line-strong); padding-top:16px; }
+.cw-preview[hidden]{ display:none; }
+.cw-preview-head{ display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+.cw-preview-title{ font-family:"Big Shoulders Display"; font-weight:700; font-size:15px; margin:0 0 2px; }
+.cw-preview-sub{ color:var(--ink-faint); font-size:11.5px; margin:0 0 12px; }
+.cw-reroll-btn{
+  flex:0 0 auto; appearance:none; border:1px solid var(--line-strong); background:var(--surface); color:var(--ink-dim);
+  border-radius:8px; padding:6px 11px; font-size:12px; font-weight:600; font-family:inherit; cursor:pointer; white-space:nowrap;
+}
+.cw-reroll-btn:hover{ border-color:var(--accent); color:var(--accent); }
+/* #cwSessTable holds a real .session-table (buildSessionTable()'s own
+   markup) so a generated session prints identically to a built-in one —
+   no separate cw-specific table styling needed here. */
+.cw-focus-tag{
+  display:inline-block; font-size:10px; font-weight:700; letter-spacing:.03em; padding:2px 8px; border-radius:999px;
+  background:var(--bike-soft); color:var(--bike); margin-left:6px; vertical-align:1px;
+}
+.cw-focus-tag.hot{ background:var(--race-soft); color:var(--race); }
+
+.cw-save-panel{ margin-top:18px; border-top:1px solid var(--line); padding-top:16px; }
+.cw-choice-row{ display:flex; flex-direction:column; gap:8px; margin-top:8px; }
+.cw-choice{ display:flex; gap:10px; align-items:flex-start; border:1px solid var(--line-strong); border-radius:10px; padding:11px 12px; cursor:pointer; }
+.cw-choice.active{ border-color:var(--accent); background:var(--accent-soft); }
+.cw-choice input{ margin-top:3px; accent-color:var(--accent); }
+.cw-choice .cw-ct{ font-weight:600; font-size:13px; }
+.cw-choice .cw-cs{ font-size:11.5px; color:var(--ink-faint); margin-top:1px; }
+.cw-save-actions{ display:flex; gap:8px; margin-top:16px; }
+.cw-btn{ flex:1; padding:11px; border-radius:9px; border:none; font-weight:700; font-size:13.5px; cursor:pointer; font-family:inherit; }
+.cw-btn.primary{ background:var(--accent); color:var(--accent-ink); }
+.cw-btn.ghost{ background:none; border:1px solid var(--line-strong); color:var(--ink-dim); }
+
+.cw-toast{
+  position:fixed; left:50%; bottom:24px; transform:translate(-50%,0); background:var(--ink); color:var(--bg);
+  padding:11px 18px; border-radius:999px; font-size:12.5px; font-weight:600; box-shadow:var(--shadow);
+  opacity:0; pointer-events:none; transition:opacity .25s, transform .25s; z-index:50;
+}
+.cw-toast.show{ opacity:1; transform:translate(-50%,-6px); }
+
 footer{ margin-top:30px; padding-top:14px; border-top:1px solid var(--line); font-size:11.5px; color:var(--ink-faint); }
 .footer-signout{ background:none; border:none; color:var(--ink-faint); text-decoration:underline; cursor:pointer; font-size:11.5px; padding:0; font-family:inherit; }
 
@@ -343,6 +428,7 @@ footer{ margin-top:30px; padding-top:14px; border-top:1px solid var(--line); fon
     </div>
     <div class="tabs" role="tablist">
       <button class="tab-btn active" data-tab="plan" role="tab" aria-selected="true">Plan</button>
+      <button class="tab-btn" data-tab="custom" role="tab" aria-selected="false">Custom</button>
       <button class="tab-btn" data-tab="fuel" role="tab" aria-selected="false">Fuelling</button>
       <button class="tab-btn" data-tab="coach" role="tab" aria-selected="false">Coach</button>
     </div>
@@ -408,6 +494,77 @@ footer{ margin-top:30px; padding-top:14px; border-top:1px solid var(--line); fon
 
   </section>
 
+  <section id="tab-custom" hidden>
+    <div class="intro-note">Build a one-off session — swim, bike, run, brick or S&amp;C — and drop it straight into today. It's always logged against today's date; there's no separate date field, since the day you build it is the day you did it.</div>
+
+    <div class="cw-slot-card" id="cwSlotCard"></div>
+
+    <span class="cw-field-label first">Activity</span>
+    <div class="cw-pill-row" id="cwActivityPills">
+      <button class="cw-pill" data-val="swim">Swim</button>
+      <button class="cw-pill" data-val="bike-road">Bike · Road</button>
+      <button class="cw-pill" data-val="bike-turbo">Bike · Turbo</button>
+      <button class="cw-pill" data-val="run">Run</button>
+      <button class="cw-pill" data-val="brick">Brick</button>
+      <button class="cw-pill" data-val="sc">S&amp;C</button>
+    </div>
+
+    <div id="cwFtpField" hidden>
+      <span class="cw-field-label">Your FTP</span>
+      <div class="cw-num-input">
+        <input type="number" id="cwFtpValue" min="50" step="1" inputmode="numeric" placeholder="e.g. 220">
+        <span class="cw-unit">W</span>
+      </div>
+      <p class="cw-ftp-note">Turbo sessions have power, so this scales every zone to actual watts — the road commute stays RPE-based, no power meter there. Remembered for next time.</p>
+    </div>
+
+    <span class="cw-field-label">Focus</span>
+    <div class="cw-pill-row" id="cwFocusPills"></div>
+
+    <span class="cw-field-label">Target</span>
+    <div class="cw-target-row">
+      <div class="cw-seg" id="cwTargetSeg">
+        <button class="active" data-val="time">Time</button>
+        <button data-val="distance">Distance</button>
+      </div>
+      <div class="cw-num-input">
+        <input type="number" id="cwTargetValue" min="1" value="45" inputmode="numeric">
+        <span class="cw-unit" id="cwTargetUnit">min</span>
+      </div>
+    </div>
+
+    <button class="cw-gen-btn" id="cwGenBtn">Generate session</button>
+
+    <div class="cw-preview" id="cwPreview" hidden>
+      <div class="cw-preview-head">
+        <div>
+          <p class="cw-preview-title" id="cwPreviewTitle">Session</p>
+          <p class="cw-preview-sub" id="cwPreviewSub"></p>
+        </div>
+        <button class="cw-reroll-btn" id="cwRerollBtn" title="Generate a different take on the same brief">↻ Re-roll</button>
+      </div>
+      <div class="cw-sess-table" id="cwSessTable"></div>
+
+      <div class="cw-save-panel">
+        <span class="cw-field-label first">Save to today</span>
+        <div class="cw-choice-row" id="cwSaveChoiceRow">
+          <label class="cw-choice active" data-val="add">
+            <input type="radio" name="cwSaveMode" value="add" checked>
+            <div><div class="cw-ct">Add alongside today's planned session</div><div class="cw-cs">Keeps what's already there — you'll see both.</div></div>
+          </label>
+          <label class="cw-choice" data-val="overwrite">
+            <input type="radio" name="cwSaveMode" value="overwrite">
+            <div><div class="cw-ct">Overwrite today's planned session</div><div class="cw-cs">Replaces it entirely with this one, on the Plan tab.</div></div>
+          </label>
+        </div>
+        <div class="cw-save-actions">
+          <button class="cw-btn ghost" id="cwDiscardBtn">Discard</button>
+          <button class="cw-btn primary" id="cwSaveBtn">Save to plan</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <section id="tab-fuel" hidden>
     <div class="intro-note">Simple, low-cost fuelling options built around real food — useful for anything from a long Sunday ride to race-day nutrition. Carb figures are approximate; test anything new in training, never on race day.</div>
     <div class="nut-list" id="nutList"></div>
@@ -458,17 +615,19 @@ footer{ margin-top:30px; padding-top:14px; border-top:1px solid var(--line); fon
   <footer>Built for Theo · rotate continuously · tap a session to check it off — synced across your devices via Supabase. <button type="button" class="footer-signout" id="signOutBtn">Sign out</button></footer>
 </div>
 
+<div class="cw-toast" id="cwToast"></div>
+
 <script id="plan-data" type="application/json">__DATA_JSON__</script>
 <script>
 (function(){
   const DATA = JSON.parse(document.getElementById('plan-data').textContent);
   const { weeks, dayOrder, dayLabels, phaseNames, phaseWeeks, nutrition } = DATA;
 
-  const DISC_LABEL = { run:"Run", bike:"Bike", swim:"Swim", sc:"S&C", rest:"Rest" };
+  const DISC_LABEL = { run:"Run", bike:"Bike", swim:"Swim", sc:"S&C", brick:"Brick", rest:"Rest" };
 
   let currentWeek = 1;
   let checks = {}; // { "w{n}": { dayKey: {done, rpe} } }
-  let settings = { eventEnabled:false, eventDate:null, eventType:'hm', manualStart:null };
+  let settings = { eventEnabled:false, eventDate:null, eventType:'hm', manualStart:null, customSessions:{}, ftp:null };
 
   // ---------- Supabase: auth + sync ----------
   // Every checkbox tick and effort rating lives in one row per signed-in
@@ -772,6 +931,10 @@ footer{ margin-top:30px; padding-top:14px; border-top:1px solid var(--line); fon
     dayOrder.forEach(key => {
       const d = w.days[key];
       if (!d) return;
+      const custom = getCustom(currentWeek, key);
+      // An 'overwrite' custom session takes over everything this day-slot
+      // displays; an 'add' one renders alongside via buildCustomBlock() below.
+      const dEff = (custom && custom.mode === 'overwrite') ? customToDaySlotShape(custom) : d;
       const [dname, dwhen] = dayLabels[key];
       const isOptional = !!d.optional;
       const entry = getEntry(currentWeek, key);
@@ -780,7 +943,7 @@ footer{ margin-top:30px; padding-top:14px; border-top:1px solid var(--line); fon
 
       const card = document.createElement('div');
       card.className = 'day-card' + (isDone ? ' done' : '') + (isOptional ? ' optional' : '');
-      card.style.setProperty('--bar-color', 'var(--' + d.discipline + ')');
+      card.style.setProperty('--bar-color', 'var(--' + dEff.discipline + ')');
 
       const meta = document.createElement('div');
       meta.className = 'day-meta';
@@ -794,23 +957,23 @@ footer{ margin-top:30px; padding-top:14px; border-top:1px solid var(--line); fon
       left.style.minWidth = '0';
       const badge = document.createElement('span');
       badge.className = 'badge';
-      badge.style.setProperty('--badge-bg', 'var(--' + d.discipline + '-soft)');
-      badge.style.setProperty('--badge-fg', 'var(--' + d.discipline + ')');
-      badge.textContent = DISC_LABEL[d.discipline] + (isOptional ? ' · optional' : '');
+      badge.style.setProperty('--badge-bg', 'var(--' + dEff.discipline + '-soft)');
+      badge.style.setProperty('--badge-fg', 'var(--' + dEff.discipline + ')');
+      badge.textContent = DISC_LABEL[dEff.discipline] + (isOptional ? ' · optional' : '') + (custom && custom.mode === 'overwrite' ? ' · custom' : '');
       const title = document.createElement('p');
-      title.className = 'day-title' + (d.tag === 'race' ? ' race' : '');
-      title.textContent = d.title;
+      title.className = 'day-title' + (dEff.tag === 'race' ? ' race' : '');
+      title.textContent = dEff.title;
       const detail = document.createElement('p');
       detail.className = 'day-detail';
-      detail.textContent = d.detail;
+      detail.textContent = dEff.detail;
       left.appendChild(badge); left.appendChild(title); left.appendChild(detail);
-      if (d.table && d.table.length) left.appendChild(buildSessionTable(d.table));
+      if (dEff.table && dEff.table.length) left.appendChild(buildSessionTable(dEff.table));
 
       const right = document.createElement('div');
       right.style.cssText = 'display:flex;flex-direction:column;align-items:flex-end;gap:8px;';
       const dur = document.createElement('div');
       dur.className = 'day-dur mono';
-      dur.textContent = d.duration;
+      dur.textContent = dEff.duration;
       const cb = document.createElement('input');
       cb.type = 'checkbox'; cb.className = 'check';
       cb.checked = isDone;
@@ -821,7 +984,7 @@ footer{ margin-top:30px; padding-top:14px; border-top:1px solid var(--line); fon
       top.appendChild(left); top.appendChild(right);
       body.appendChild(top);
 
-      if (d.discipline !== 'rest') {
+      if (dEff.discipline !== 'rest') {
         const rpeRow = document.createElement('div');
         rpeRow.className = 'rpe-row';
         const label = document.createElement('span');
@@ -842,6 +1005,8 @@ footer{ margin-top:30px; padding-top:14px; border-top:1px solid var(--line); fon
         rpeRow.appendChild(pills);
         body.appendChild(rpeRow);
       }
+
+      if (custom && custom.mode === 'add') body.appendChild(buildCustomBlock(custom));
 
       card.appendChild(meta); card.appendChild(body);
       dayListEl.appendChild(card);
@@ -885,6 +1050,459 @@ footer{ margin-top:30px; padding-top:14px; border-top:1px solid var(--line); fon
   // ---------- settings persistence ----------
   function persistSettings(){
     saveRemoteState();
+  }
+
+  // ---------- custom workout tab ----------
+  // A custom session is stored in settings.customSessions, keyed 'w{n}-{dayKey}',
+  // and either replaces (mode:'overwrite') or supplements (mode:'add') the plan's
+  // built-in content for that day-slot when renderWeek() draws it. It's saved
+  // via the same settings sync as everything else, so no schema change needed.
+  const ACTIVITY_ICON = { swim:'🏊', 'bike-road':'🚴', 'bike-turbo':'🚴', run:'🏃', brick:'🔁', sc:'🏋️' };
+  const ACTIVITY_LABEL = { swim:'Swim', 'bike-road':'Bike (Road)', 'bike-turbo':'Bike (Turbo)', run:'Run', brick:'Brick', sc:'S&C' };
+  const ACTIVITY_DISC = { swim:'swim', 'bike-road':'bike', 'bike-turbo':'bike', run:'run', brick:'brick', sc:'sc' };
+  const FOCUS_BY_ACTIVITY = {
+    'swim':      ['recovery','endurance','tempo','vo2max','anaerobic'],
+    'bike-road': ['recovery','endurance','tempo','vo2max','anaerobic'],
+    'bike-turbo':['recovery','endurance','tempo','vo2max','anaerobic'],
+    'run':       ['recovery','endurance','tempo','vo2max','anaerobic'],
+    'brick':     ['endurance','tempo','vo2max'],
+    'sc':        ['strength'],
+  };
+  const FOCUS_LABEL = {
+    recovery:'Recovery', endurance:'Aerobic / Endurance', tempo:'Tempo / Threshold',
+    vo2max:'VO2 Max', anaerobic:'Anaerobic', strength:'Strength',
+  };
+
+  function slotKeyStr(n, key){ return 'w' + n + '-' + key; }
+  function getCustom(n, key){ return (settings.customSessions || {})[slotKeyStr(n, key)] || null; }
+
+  function keysForWeekday(shortName){ return dayOrder.filter(k => dayLabels[k][0] === shortName); }
+
+  function resolveTodaySlot(){
+    const WD = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    const now = new Date();
+    const shortName = WD[now.getDay()];
+    const start = computeStartDate();
+    let weekN = currentWeek, usingCalendar = false;
+    if (start) {
+      const startD = new Date(start); startD.setHours(0,0,0,0);
+      const todayD = new Date(now); todayD.setHours(0,0,0,0);
+      const diffDays = Math.round((todayD - startD) / 86400000);
+      if (diffDays >= 0) {
+        const wn = Math.min(16, Math.floor(diffDays / 7) + 1);
+        if (weekByN(wn)) { weekN = wn; usingCalendar = true; }
+      }
+    }
+    const w = weekByN(weekN);
+    const candidates = keysForWeekday(shortName).filter(k => w && w.days[k]);
+    return { weekN, weekday: shortName, candidates, usingCalendar, week: w };
+  }
+
+  // A generated (or saved) custom session's `table` is already in the exact
+  // {set, work, effort, recovery} row shape the plan's own sessions use, so
+  // it renders through the same buildSessionTable() as everything else —
+  // no separate custom-workout table format to keep in sync.
+  function customToDaySlotShape(custom){
+    const s = custom.session;
+    return {
+      discipline: ACTIVITY_DISC[s.activity],
+      title: ACTIVITY_LABEL[s.activity] + ' — ' + FOCUS_LABEL[s.focus] + ' (custom)',
+      detail: 'Custom session · target ' + s.targetValue + (s.targetType==='time' ? ' mins' : (s.activity==='swim'?'m':'km')),
+      duration: s.targetType==='time' ? (s.targetValue + ' min') : '—',
+      table: s.table,
+      optional: false,
+    };
+  }
+
+  function buildCustomBlock(custom){
+    const s = custom.session;
+    const wrap = document.createElement('div');
+    wrap.className = 'day-body';
+    wrap.style.cssText = 'margin-top:10px; padding-top:10px; border-top:1px dashed var(--line-strong);';
+    const badge = document.createElement('span');
+    badge.className = 'badge';
+    badge.style.setProperty('--badge-bg', 'var(--' + ACTIVITY_DISC[s.activity] + '-soft)');
+    badge.style.setProperty('--badge-fg', 'var(--' + ACTIVITY_DISC[s.activity] + ')');
+    badge.textContent = ACTIVITY_LABEL[s.activity] + ' · custom';
+    const title = document.createElement('p');
+    title.className = 'day-title';
+    title.textContent = FOCUS_LABEL[s.focus] + ' — target ' + s.targetValue + (s.targetType==='time' ? ' mins' : (s.activity==='swim'?'m':'km'));
+    wrap.appendChild(badge); wrap.appendChild(title);
+    wrap.appendChild(buildSessionTable(s.table));
+    return wrap;
+  }
+
+  // -- generation (illustrative templates; tune the actual pace/rep formulas
+  //    once the interaction itself feels right). Each function returns an
+  //    array of {set, work, effort, recovery} rows — the plan's own table
+  //    schema (see e.g. Tue_pm's bike intervals in plan_data.json) — so a
+  //    generated session prints identically to a built-in one. --
+  function fmtMin(m){ return m + (m===1?' min':' mins'); }
+  function pick(seed, arr){ return arr[seed % arr.length]; }
+  function jitter(seed, base, spread){
+    const offsets = [0, spread, -spread, Math.ceil(spread/2)];
+    return Math.max(1, base + offsets[seed % offsets.length]);
+  }
+
+  function generateRun(focus, type, val, seed){
+    if (focus === 'recovery'){
+      const mins = type==='time' ? val : Math.round(val*7);
+      return [
+        { set:'1', work: fmtMin(jitter(seed,mins,3)), effort:'continuous easy jog — recovery effort', recovery:'–' },
+      ];
+    }
+    if (focus === 'endurance'){
+      const mins = type==='time' ? val : Math.round(val*6);
+      return [
+        { set:'1', work: pick(seed,['8 min','10 min','6 min']), effort:'easy jog warm-up' + (seed%2 ? ', drills' : ''), recovery:'–' },
+        { set:'1', work: fmtMin(jitter(seed,mins-13,4)), effort:'steady continuous run — Zone 2 effort', recovery:'–' },
+        { set:'1', work:'5 min', effort:'easy jog cool-down', recovery:'–' },
+      ];
+    }
+    if (focus === 'tempo'){
+      const work = pick(seed,[6,5,8]), rec = pick(seed,[2,1.5,3]);
+      const avail = (type==='time' ? val : Math.round(val*5)) - 13;
+      const reps = Math.max(2, Math.round(avail/(work+rec)));
+      return [
+        { set:'1', work:'10 min', effort:'easy run, drills', recovery:'–' },
+        { set: reps+'x', work: work+' min', effort:'tempo pace effort', recovery: rec+' min easy jog' },
+        { set:'1', work:'5 min', effort:'easy jog cool-down', recovery:'–' },
+      ];
+    }
+    if (focus === 'vo2max'){
+      const work = pick(seed,[2,3,1.5]), label = pick(seed,['5k pace','3k pace','5k pace']);
+      const avail = (type==='time' ? val : Math.round(val*4.5)) - 13;
+      const reps = Math.max(4, Math.round(avail/(work*2)));
+      return [
+        { set:'1', work: pick(seed,['10 min','12 min']), effort:'easy run, strides x4', recovery:'–' },
+        { set: reps+'x', work: work+' min', effort:'@ ' + label, recovery: work+' min easy jog' },
+        { set:'1', work:'5 min', effort:'easy jog cool-down', recovery:'–' },
+      ];
+    }
+    // anaerobic
+    const work = pick(seed,[30,20,45]), rec = pick(seed,[90,120,75]);
+    const avail = (type==='time' ? val : 0) || 20;
+    const reps = Math.max(6, Math.round((avail-13)/((work+rec)/60)));
+    return [
+      { set:'1', work: pick(seed,['10 min','12 min']), effort:'easy run, strides', recovery:'–' },
+      { set: reps+'x', work: work+' sec', effort:'max effort', recovery: rec+' sec walk-jog' },
+      { set:'1', work:'5 min', effort:'easy jog cool-down', recovery:'–' },
+    ];
+  }
+
+  function generateSwim(focus, type, val, seed){
+    const meters = type==='distance' ? val : Math.round(val*35);
+    const warmDist = pick(seed,['200m','300m','250m']);
+    if (focus === 'recovery') return [
+      { set:'1', work: warmDist, effort:'easy mixed warm-up', recovery:'–' },
+      { set:'1', work: Math.max(400, jitter(seed,meters-300,100))+'m', effort:'continuous, easy — focus on form', recovery:'–' },
+      { set:'1', work:'100m', effort:'easy cool-down kick', recovery:'–' },
+    ];
+    if (focus === 'endurance'){
+      const repDist = pick(seed,[150,200,100]);
+      return [
+        { set:'1', work: warmDist, effort:'mixed warm-up, kick', recovery:'–' },
+        { set: Math.max(4, Math.round((meters-400)/repDist))+'x', work: repDist+'m', effort:'Zone 2 effort', recovery:'20 sec' },
+        { set:'1', work:'200m', effort:'easy cool-down', recovery:'–' },
+      ];
+    }
+    if (focus === 'tempo'){
+      const repDist = pick(seed,[100,150,75]);
+      return [
+        { set:'1', work: warmDist, effort:'mixed warm-up, kick', recovery:'–' },
+        { set: Math.max(4, Math.round((meters-400)/repDist))+'x', work: repDist+'m', effort:'threshold effort', recovery:'20 sec' },
+        { set:'1', work:'200m', effort:'easy cool-down', recovery:'–' },
+      ];
+    }
+    if (focus === 'vo2max'){
+      const repDist = pick(seed,[50,75,50]);
+      return [
+        { set:'1', work:'300m', effort:'mixed warm-up, 4x25 build', recovery:'–' },
+        { set: Math.max(6, Math.round((meters-400)/repDist))+'x', work: repDist+'m', effort:'best effort', recovery:'30 sec' },
+        { set:'1', work:'200m', effort:'easy cool-down', recovery:'–' },
+      ];
+    }
+    const repDist = pick(seed,[25,25,50]);
+    return [
+      { set:'1', work:'300m', effort:'mixed warm-up, 4x25 build', recovery:'–' },
+      { set: Math.max(8, Math.round((meters-400)/repDist))+'x', work: repDist+'m', effort:'sprint', recovery:'45 sec' },
+      { set:'1', work:'200m', effort:'easy cool-down', recovery:'–' },
+    ];
+  }
+
+  // Zone % ranges match the Coach tab's own power-zone table (LTHR/FTP
+  // reference). Road rides stay RPE/feel-based by design (no power meter on
+  // the commute), so `ftp` is only ever passed for turbo sessions.
+  const ZONE_PCT = { 1:[0, 0.55], 2:[0.56, 0.75], 4:[0.91, 1.05], 5:[1.06, 1.20], 6:[1.21, null] };
+  function zoneWatts(ftp, zone){
+    if (!ftp) return '';
+    const [lo, hi] = ZONE_PCT[zone];
+    if (zone === 1) return ' — up to ' + Math.round(ftp*hi) + 'W';
+    if (hi == null) return ' — ' + Math.round(ftp*lo) + 'W+';
+    return ' — ' + Math.round(ftp*lo) + '–' + Math.round(ftp*hi) + 'W';
+  }
+
+  function generateBike(focus, type, val, turbo, seed, ftp){
+    const mins = type==='time' ? val : Math.round(val * (focus==='recovery'?4:focus==='endurance'?2.2:focus==='tempo'?1.8:1.6));
+    const warmMin = turbo ? '5 min' : '10 min';
+    if (focus === 'recovery') return [
+      { set:'1', work: warmMin, effort:'easy spin, single-leg drills', recovery:'–' },
+      { set:'1', work: fmtMin(jitter(seed,mins-15,5)), effort:'Zone 1 easy spin (<55% FTP' + zoneWatts(ftp,1) + ')', recovery:'–' },
+      { set:'1', work:'5 min', effort:'easy spin cool-down', recovery:'–' },
+    ];
+    if (focus === 'endurance') return [
+      { set:'1', work: warmMin, effort:'easy spin, single-leg drills', recovery:'–' },
+      { set:'1', work: fmtMin(jitter(seed,mins-15,5)), effort:'Zone 2 steady effort (56-75% FTP' + zoneWatts(ftp,2) + ')', recovery:'–' },
+      { set:'1', work:'5 min', effort:'easy spin cool-down', recovery:'–' },
+    ];
+    if (focus === 'tempo'){
+      const work = pick(seed,[8,10,6]), rec = pick(seed,[4,5,3]);
+      const reps = Math.max(2, Math.round((mins-15)/(work+rec)));
+      return [
+        { set:'1', work: warmMin, effort:'easy spin, drills', recovery:'–' },
+        { set: reps+'x', work: work+' min', effort:'Zone 4 (91-105% FTP' + zoneWatts(ftp,4) + ')', recovery: rec+' min Zone 1' },
+        { set:'1', work:'5 min', effort:'easy spin cool-down', recovery:'–' },
+      ];
+    }
+    if (focus === 'vo2max'){
+      const work = pick(seed,[3,2,4]), rec = pick(seed,[3,2,4]);
+      const reps = Math.max(4, Math.round((mins-15)/(work+rec)));
+      return [
+        { set:'1', work: warmMin, effort:'easy spin, drills', recovery:'–' },
+        { set: reps+'x', work: work+' min', effort:'Zone 5 (106-120% FTP' + zoneWatts(ftp,5) + ')', recovery: rec+' min Zone 1' },
+        { set:'1', work:'5 min', effort:'easy spin cool-down', recovery:'–' },
+      ];
+    }
+    const work = pick(seed,[30,20,45]), rec = pick(seed,[4,5,3]);
+    const reps = Math.max(6, Math.round((mins-15)/(rec+work/60)));
+    return [
+      { set:'1', work: warmMin, effort:'easy spin, drills', recovery:'–' },
+      { set: reps+'x', work: work+' sec', effort:'Zone 6 max effort (>121% FTP' + zoneWatts(ftp,6) + ')', recovery: rec+' min easy spin' },
+      { set:'1', work:'5 min', effort:'easy spin cool-down', recovery:'–' },
+    ];
+  }
+
+  function generateSC(val, seed){
+    const sets = Math.max(2, Math.round((val-10)/9));
+    const blockA = pick(seed, ['8-10 squats, 10 each leg step-ups, 12 single-leg RDL', '10 goblet squats, 12 walking lunges each leg, 10 single-leg RDL']);
+    const blockB = pick(seed, ['45 sec plank, 12 back extensions, 15 calf raises', '30 sec side plank each side, 12 back extensions, 15 calf raises']);
+    return [
+      { set:'1', work: pick(seed,['8 min','10 min']), effort:'mobility + activation (band walks, glute bridge)', recovery:'–' },
+      { set: sets+'x', work: blockA, effort:'controlled tempo', recovery:'60 sec' },
+      { set: sets+'x', work: blockB, effort:'controlled tempo', recovery:'60 sec' },
+      { set:'1', work:'5 min', effort:'stretch — quads, hips, calves', recovery:'–' },
+    ];
+  }
+
+  function generateBrick(focus, type, val, seed){
+    const bikeMins = Math.round((type==='time'?val:val*3) * 0.65);
+    const runMins = Math.round((type==='time'?val:val*3) * 0.35);
+    const bikeRows = generateBike(focus==='endurance'?'endurance':focus, 'time', bikeMins, false, seed);
+    const runRows = generateRun(focus==='endurance'?'endurance':'tempo', 'time', runMins, seed);
+    const bikeMain = bikeRows[1] || bikeRows[0];
+    const runMain = runRows[1] || runRows[0];
+    return [
+      { set:'Bike', work: bikeMain.work, effort: bikeMain.effort, recovery: bikeMain.recovery },
+      { set:'T1', work:'–', effort:'quick transition — helmet off, shoes on', recovery:'–' },
+      { set:'Run', work: runMain.work, effort: 'straight off the bike — ' + runMain.effort, recovery: runMain.recovery },
+    ];
+  }
+
+  function generateSession(activity, focus, type, val, seed, ftp){
+    if (activity === 'run') return generateRun(focus, type, val, seed);
+    if (activity === 'swim') return generateSwim(focus, type, val, seed);
+    if (activity === 'bike-road') return generateBike(focus, type, val, false, seed);
+    if (activity === 'bike-turbo') return generateBike(focus, type, val, true, seed, ftp);
+    if (activity === 'sc') return generateSC(val, seed);
+    if (activity === 'brick') return generateBrick(focus, type, val, seed);
+  }
+
+  // -- state + DOM wiring --
+  const cwState = { activity:null, focus:null, targetType:'time', targetValue:45, slotWeek:null, slotKey:null, rerollSeed:0, lastTable:null };
+
+  const cwActivityPillsEl = document.getElementById('cwActivityPills');
+  const cwFocusPillsEl = document.getElementById('cwFocusPills');
+  const cwTargetSegEl = document.getElementById('cwTargetSeg');
+  const cwTargetValueEl = document.getElementById('cwTargetValue');
+  const cwTargetUnitEl = document.getElementById('cwTargetUnit');
+  const cwGenBtnEl = document.getElementById('cwGenBtn');
+  const cwPreviewEl = document.getElementById('cwPreview');
+  const cwFtpFieldEl = document.getElementById('cwFtpField');
+  const cwFtpValueEl = document.getElementById('cwFtpValue');
+
+  cwFtpValueEl.addEventListener('input', () => {
+    const v = Number(cwFtpValueEl.value) || null;
+    settings.ftp = v;
+    persistSettings();
+  });
+
+  function cwToast(msg){
+    const t = document.getElementById('cwToast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(cwToast._t);
+    cwToast._t = setTimeout(() => t.classList.remove('show'), 2200);
+  }
+
+  cwActivityPillsEl.querySelectorAll('.cw-pill').forEach(p => {
+    p.addEventListener('click', () => {
+      cwActivityPillsEl.querySelectorAll('.cw-pill').forEach(x => x.classList.remove('active'));
+      p.classList.add('active');
+      cwState.activity = p.dataset.val;
+      cwState.focus = null;
+      cwRenderFocusPills();
+      cwUpdateTargetOptions();
+      cwPreviewEl.hidden = true;
+      cwFtpFieldEl.hidden = p.dataset.val !== 'bike-turbo';
+      if (p.dataset.val === 'bike-turbo' && settings.ftp) cwFtpValueEl.value = settings.ftp;
+    });
+  });
+
+  function cwRenderFocusPills(){
+    cwFocusPillsEl.innerHTML = '';
+    const opts = FOCUS_BY_ACTIVITY[cwState.activity] || [];
+    opts.forEach((key, i) => {
+      const b = document.createElement('button');
+      b.className = 'cw-pill';
+      b.dataset.val = key;
+      b.textContent = FOCUS_LABEL[key];
+      if (i === 0) { b.classList.add('active'); cwState.focus = key; }
+      b.addEventListener('click', () => {
+        cwFocusPillsEl.querySelectorAll('.cw-pill').forEach(x => x.classList.remove('active'));
+        b.classList.add('active');
+        cwState.focus = key;
+      });
+      cwFocusPillsEl.appendChild(b);
+    });
+  }
+
+  function cwUpdateTargetOptions(){
+    const distanceCapable = ['swim','bike-road','bike-turbo','run','brick'].includes(cwState.activity);
+    const distBtn = cwTargetSegEl.querySelector('[data-val="distance"]');
+    distBtn.disabled = !distanceCapable;
+    if (!distanceCapable && cwState.targetType === 'distance') cwSetTargetType('time');
+    cwUpdateUnit();
+  }
+  function cwSetTargetType(t){
+    cwState.targetType = t;
+    cwTargetSegEl.querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.val === t));
+    cwUpdateUnit();
+  }
+  cwTargetSegEl.querySelectorAll('button').forEach(b => {
+    b.addEventListener('click', () => { if (!b.disabled) cwSetTargetType(b.dataset.val); });
+  });
+  function cwUpdateUnit(){
+    if (cwState.targetType === 'time') { cwTargetUnitEl.textContent = 'min'; return; }
+    cwTargetUnitEl.textContent = cwState.activity === 'swim' ? 'm' : 'km';
+  }
+  cwTargetValueEl.addEventListener('input', () => { cwState.targetValue = Number(cwTargetValueEl.value) || 0; });
+
+  function cwRenderPreview(seed){
+    const ftpForGen = cwState.activity === 'bike-turbo' ? settings.ftp : null;
+    const rows = generateSession(cwState.activity, cwState.focus, cwState.targetType, cwState.targetValue, seed, ftpForGen);
+    cwState.lastTable = rows;
+    document.getElementById('cwPreviewTitle').innerHTML =
+      ACTIVITY_ICON[cwState.activity] + ' ' + ACTIVITY_LABEL[cwState.activity] +
+      '<span class="cw-focus-tag' + (cwState.focus==='vo2max'||cwState.focus==='anaerobic'?' hot':'') + '">' + FOCUS_LABEL[cwState.focus] + '</span>';
+    document.getElementById('cwPreviewSub').textContent =
+      'Target: ' + cwState.targetValue + (cwState.targetType==='time' ? ' mins' : (cwState.activity==='swim'?'m':'km')) + ' — generated as a starting point, not prescriptive.';
+    // Same buildSessionTable() the Plan tab uses for its own sessions, so a
+    // generated session previews in exactly the same table shape it'll
+    // actually appear in once saved.
+    const host = document.getElementById('cwSessTable');
+    host.innerHTML = '';
+    host.appendChild(buildSessionTable(rows));
+    cwPreviewEl.hidden = false;
+  }
+
+  cwGenBtnEl.addEventListener('click', () => {
+    if (!cwState.activity) { cwToast('Pick an activity first'); return; }
+    cwState.rerollSeed = 0;
+    cwRenderPreview(cwState.rerollSeed);
+    cwPreviewEl.scrollIntoView({ behavior:'smooth', block:'nearest' });
+  });
+  document.getElementById('cwRerollBtn').addEventListener('click', () => {
+    cwState.rerollSeed += 1;
+    cwRenderPreview(cwState.rerollSeed);
+    cwToast('Re-rolled');
+  });
+  document.getElementById('cwDiscardBtn').addEventListener('click', () => {
+    cwPreviewEl.hidden = true;
+    cwToast('Discarded');
+  });
+  document.querySelectorAll('input[name="cwSaveMode"]').forEach(r => {
+    r.addEventListener('change', () => {
+      document.querySelectorAll('.cw-choice').forEach(c => c.classList.remove('active'));
+      r.closest('.cw-choice').classList.add('active');
+    });
+  });
+  document.getElementById('cwSaveBtn').addEventListener('click', () => {
+    if (!cwState.lastTable || !cwState.slotKey) return;
+    const mode = document.querySelector('input[name="cwSaveMode"]:checked').value;
+    settings.customSessions = settings.customSessions || {};
+    settings.customSessions[slotKeyStr(cwState.slotWeek, cwState.slotKey)] = {
+      mode,
+      session: {
+        activity: cwState.activity, focus: cwState.focus,
+        targetType: cwState.targetType, targetValue: cwState.targetValue,
+        table: cwState.lastTable,
+      },
+      savedAt: new Date().toISOString(),
+    };
+    persistSettings();
+    if (cwState.slotWeek === currentWeek) renderWeek();
+    cwPreviewEl.hidden = true;
+    renderCustomTab();
+    cwToast(mode === 'overwrite' ? 'Saved — replaced today’s planned session' : 'Saved — added alongside today’s plan');
+  });
+
+  function renderCustomTab(){
+    const slot = resolveTodaySlot();
+    if (!cwState.slotKey || cwState.slotWeek !== slot.weekN || !slot.candidates.includes(cwState.slotKey)) {
+      cwState.slotWeek = slot.weekN;
+      cwState.slotKey = slot.candidates[0] || null;
+    }
+    const host = document.getElementById('cwSlotCard');
+    if (!slot.candidates.length) {
+      host.innerHTML = '<div class="cw-slot-head">Today</div><div class="cw-slot-main">No matching day found</div>' +
+        '<div class="cw-slot-sub">Couldn’t match today’s weekday to Week ' + slot.weekN + ' of the plan.</div>';
+      return;
+    }
+    const w = slot.week;
+    const dl = dayLabels[cwState.slotKey];
+    const custom = getCustom(slot.weekN, cwState.slotKey);
+    const existing = w.days[cwState.slotKey];
+
+    let html = '<div class="cw-slot-head">' + (slot.usingCalendar ? 'Today' : 'Today — no start date set, using currently viewed Week ' + slot.weekN) + '</div>';
+    html += '<div class="cw-slot-main">Week ' + slot.weekN + ' · ' + dl[0] + (dl[1] ? ' (' + dl[1] + ')' : '') + '</div>';
+
+    if (slot.candidates.length > 1) {
+      html += '<div class="cw-slot-pick"><select id="cwSlotPick">' +
+        slot.candidates.map(k => '<option value="'+k+'"' + (k===cwState.slotKey?' selected':'') + '>' + dayLabels[k][1] + '</option>').join('') +
+        '</select></div>';
+    }
+
+    if (custom) {
+      html += '<div class="cw-existing">' +
+        (custom.mode==='overwrite' ? 'This slot is currently <b>overwritten</b> by a custom ' : 'A custom session is currently <b>added alongside</b> the planned ') +
+        ACTIVITY_LABEL[custom.session.activity] + ' session.' +
+        '<div><button type="button" class="cw-remove-btn" id="cwRemoveBtn">Remove custom session</button></div></div>';
+    } else if (existing) {
+      html += '<div class="cw-existing">Currently planned: <b>' + existing.title + '</b> (' + existing.duration + ')</div>';
+    }
+
+    host.innerHTML = html;
+
+    const pickEl = document.getElementById('cwSlotPick');
+    if (pickEl) pickEl.addEventListener('change', () => { cwState.slotKey = pickEl.value; renderCustomTab(); });
+    const removeBtn = document.getElementById('cwRemoveBtn');
+    if (removeBtn) removeBtn.addEventListener('click', () => {
+      delete settings.customSessions[slotKeyStr(slot.weekN, cwState.slotKey)];
+      persistSettings();
+      if (slot.weekN === currentWeek) renderWeek();
+      renderCustomTab();
+      cwToast('Removed');
+    });
   }
 
   // ---------- block review ----------
@@ -1006,9 +1624,11 @@ footer{ margin-top:30px; padding-top:14px; border-top:1px solid var(--line); fon
       btn.classList.add('active'); btn.setAttribute('aria-selected','true');
       const tab = btn.dataset.tab;
       document.getElementById('tab-plan').hidden = tab !== 'plan';
+      document.getElementById('tab-custom').hidden = tab !== 'custom';
       document.getElementById('tab-fuel').hidden = tab !== 'fuel';
       document.getElementById('tab-coach').hidden = tab !== 'coach';
       if (tab === 'coach') renderCoach();
+      if (tab === 'custom') renderCustomTab();
     });
   });
 
