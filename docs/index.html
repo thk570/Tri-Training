@@ -565,6 +565,10 @@ footer{ margin-top:30px; padding-top:14px; border-top:1px solid var(--line); fon
   }
 
   function subscribeRemoteState(userId){
+    // Defensive: if a previous (e.g. racing) call already opened a channel,
+    // tear it down before opening another — a channel can only be
+    // subscribed to once, and re-using the same topic name throws.
+    if (realtimeChannel) { sb.removeChannel(realtimeChannel); realtimeChannel = null; }
     realtimeChannel = sb.channel('training_state:' + userId)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'training_state', filter: 'user_id=eq.' + userId },
         (payload) => {
@@ -990,7 +994,15 @@ footer{ margin-top:30px; padding-top:14px; border-top:1px solid var(--line); fon
     currentUser = session.user;
     authGateEl.hidden = true;
     authSubmitBtnEl.disabled = false;
+    // Set this *before* the awaits below, not after. onAuthStateChange can
+    // fire this function twice in quick succession (e.g. INITIAL_SESSION
+    // followed almost immediately by SIGNED_IN/TOKEN_REFRESHED) — without
+    // setting the guard synchronously up front, both calls can race past
+    // this check while the first is still awaiting loadRemoteState(),
+    // and both then try to open a realtime subscription on the same
+    // channel, which throws.
     if (appStarted) return;
+    appStarted = true;
     try {
       await loadRemoteState(currentUser.id);
     } catch (e) {
@@ -998,7 +1010,6 @@ footer{ margin-top:30px; padding-top:14px; border-top:1px solid var(--line); fon
     }
     subscribeRemoteState(currentUser.id);
     startApp();
-    appStarted = true;
   }
 
   if (sb) sb.auth.onAuthStateChange(async (event, session) => {
