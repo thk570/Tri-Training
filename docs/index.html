@@ -225,9 +225,15 @@ footer{ margin-top:30px; padding-top:14px; border-top:1px solid var(--line); fon
 
 /* Auth gate */
 #authGate{
-  position:fixed; inset:0; z-index:100; background:var(--bg); display:flex;
+  position:fixed; inset:0; z-index:100; background:var(--bg);
   align-items:center; justify-content:center; padding:24px;
 }
+/* #authGate's own display:flex would otherwise outrank the browser's
+   default [hidden]{display:none} rule (an ID selector beats an attribute
+   selector), so setting authGateEl.hidden = true in JS would silently do
+   nothing and the overlay would stay on screen forever. Scoping display:flex
+   to the *not*-hidden state avoids that fight entirely. */
+#authGate:not([hidden]){ display:flex; }
 .auth-card{
   width:100%; max-width:360px; background:var(--surface); border:1px solid var(--line);
   border-radius:16px; padding:28px 24px; box-shadow:var(--shadow);
