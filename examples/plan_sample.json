@@ -1,0 +1,92 @@
+{
+  "schema": 1,
+  "plan_id": "SAMPLE_2026-10-19_to_2026-10-25",
+  "title": "SAMPLE week (not a real plan)",
+  "generated": "2026-10-17",
+  "range": { "from": "2026-10-19", "to": "2026-10-25" },
+  "sessions": [
+    {
+      "id": "2026-10-19_rest",
+      "date": "2026-10-19",
+      "slot": "Lunch",
+      "discipline": "rest",
+      "title": "Rest / easy walk",
+      "detail": "Lunchtime off.",
+      "duration": "—"
+    },
+    {
+      "id": "2026-10-20_bike_commute-out",
+      "date": "2026-10-20",
+      "slot": "AM",
+      "discipline": "bike",
+      "title": "Commute out — steady",
+      "detail": "Save the legs for the way home.",
+      "duration": "~75 min",
+      "table": [
+        { "set": "1", "work": "33 km", "effort": "steady, controlled", "recovery": "–" }
+      ]
+    },
+    {
+      "id": "2026-10-20_bike_commute-home",
+      "date": "2026-10-20",
+      "slot": "PM",
+      "discipline": "bike",
+      "title": "Commute home — intervals",
+      "detail": "Go by feel, no power meter.",
+      "duration": "~80 min",
+      "table": [
+        { "set": "4x", "work": "4 min", "effort": "RPE 7/10", "recovery": "3 min easy" }
+      ]
+    },
+    {
+      "id": "2026-10-21_run_easy-strides",
+      "date": "2026-10-21",
+      "slot": "Lunch",
+      "discipline": "run",
+      "title": "Easy + strides",
+      "detail": "Easy run, strides to finish.",
+      "duration": "30 min",
+      "table": [
+        { "set": "1", "work": "25 min", "effort": "easy", "recovery": "–" },
+        { "set": "4x", "work": "20 s", "effort": "fast but relaxed", "recovery": "walk back" }
+      ]
+    },
+    {
+      "id": "2026-10-22_swim_technique",
+      "date": "2026-10-22",
+      "slot": "Evening",
+      "discipline": "swim",
+      "title": "Technique + aerobic",
+      "detail": "Pool, evening only.",
+      "duration": "45 min"
+    },
+    {
+      "id": "2026-10-24_run_parkrun-plus",
+      "date": "2026-10-24",
+      "slot": "Morning",
+      "discipline": "run",
+      "title": "Parkrun + add-on",
+      "detail": "Parkrun at steady effort, then easy to extend the distance.",
+      "duration": "~70 min"
+    },
+    {
+      "id": "2026-10-24_sc_strength",
+      "date": "2026-10-24",
+      "slot": "Evening",
+      "discipline": "sc",
+      "title": "S&C",
+      "detail": "Well after parkrun.",
+      "duration": "30 min",
+      "optional": true
+    },
+    {
+      "id": "2026-10-25_bike_easy",
+      "date": "2026-10-25",
+      "slot": "Day",
+      "discipline": "bike",
+      "title": "Easy bike",
+      "detail": "Conversational pace.",
+      "duration": "60 min"
+    }
+  ]
+}
