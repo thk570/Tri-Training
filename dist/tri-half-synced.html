@@ -345,6 +345,26 @@ footer{ margin-top:30px; padding-top:14px; border-top:1px solid var(--line); fon
 .auth-msg{ margin:12px 0 0; font-size:12.5px; line-height:1.5; min-height:1em; }
 .auth-msg.error{ color:var(--race); }
 .auth-msg.info{ color:var(--ink-dim); }
+
+/* ---- Schedule tab (dated plans imported from JSON) ---- */
+.sch-nav{ display:flex; gap:8px; margin:10px 0 2px; }
+.sch-btn{ border:1px solid var(--line-strong); background:var(--surface); color:var(--ink); padding:8px 14px; border-radius:9px; font-weight:600; font-size:13.5px; cursor:pointer; }
+.sch-btn.primary{ background:var(--accent); border-color:var(--accent); color:var(--accent-ink); }
+.sch-btn.danger{ color:var(--race); }
+.sch-btn:disabled{ opacity:.45; cursor:default; }
+.sch-btn:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+.sch-day-h{ display:flex; align-items:baseline; gap:8px; margin:18px 0 6px; font-family:"Big Shoulders Display",system-ui,sans-serif; font-weight:700; font-size:18px; }
+.sch-day-h.today{ color:var(--accent); }
+.sch-day-h .sch-today-tag{ font-family:"Source Sans 3",sans-serif; font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; }
+.sch-empty{ font-size:13px; color:var(--ink-faint); margin:0 0 4px; }
+#schPaste{ width:100%; margin:10px 0 8px; padding:10px; border:1px solid var(--line-strong); border-radius:9px; background:var(--bg); color:var(--ink); font:12px "IBM Plex Mono", monospace; }
+.sch-preview{ margin-top:14px; padding:12px 14px; border:1px solid var(--line-strong); border-radius:12px; background:var(--surface-2); color:var(--ink); font-size:14px; }
+.sch-preview.error{ border-color:var(--race); }
+.sch-counts{ font-weight:700; margin:0 0 6px; }
+.sch-preview ul{ margin:4px 0 8px 18px; padding:0; font-size:13px; color:var(--ink-dim); }
+.sch-warn{ color:var(--race); font-size:13px; margin:6px 0; }
+.sch-actions{ display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
+.sch-log{ font-size:12px; color:var(--ink-faint); margin-top:12px; }
 </style>
 
 </head>
@@ -382,6 +402,7 @@ footer{ margin-top:30px; padding-top:14px; border-top:1px solid var(--line); fon
     </div>
     <div class="tabs" role="tablist">
       <button class="tab-btn active" data-tab="plan" role="tab" aria-selected="true">Plan</button>
+      <button class="tab-btn" data-tab="sched" role="tab" aria-selected="false">Schedule</button>
       <button class="tab-btn" data-tab="custom" role="tab" aria-selected="false">Custom</button>
       <button class="tab-btn" data-tab="fuel" role="tab" aria-selected="false">Fuelling</button>
       <button class="tab-btn" data-tab="coach" role="tab" aria-selected="false">Coach</button>
@@ -446,6 +467,37 @@ footer{ margin-top:30px; padding-top:14px; border-top:1px solid var(--line); fon
       </div>
     </details>
 
+  </section>
+
+  <section id="tab-sched" hidden>
+    <div class="week-head">
+      <div class="wk-phase" id="schKicker">Dated schedule</div>
+      <h2 id="schTitle">No plan imported</h2>
+      <div class="wk-dates" id="schDates"></div>
+      <div class="progress-row" id="schProgressRow" hidden>
+        <div class="progress-track"><div class="progress-fill" id="schFill"></div></div>
+        <span class="progress-label mono" id="schFillLabel"></span>
+      </div>
+      <div class="sch-nav" id="schNav" hidden>
+        <button type="button" class="sch-btn" id="schPrev">‹ Prev</button>
+        <button type="button" class="sch-btn" id="schToday">Today</button>
+        <button type="button" class="sch-btn" id="schNext">Next ›</button>
+      </div>
+    </div>
+    <div class="day-list" id="schList" style="display:block"></div>
+
+    <details class="panel" id="schImportPanel">
+      <summary>Import plan</summary>
+      <div class="panel-body">
+        <p>Choose a <b>plan_YYYY-MM.json</b> file, or paste its contents. You'll see a preview before anything is saved. Re-importing an updated file merges by session id and keeps your ticks and effort ratings.</p>
+        <input type="file" id="schFile" accept=".json,application/json">
+        <textarea id="schPaste" rows="5" placeholder="…or paste plan JSON here" spellcheck="false"></textarea>
+        <div class="sch-actions"><button type="button" class="sch-btn" id="schPasteBtn">Preview pasted plan</button></div>
+        <div id="schPreview" hidden></div>
+        <div class="sch-log" id="schLog"></div>
+        <div class="sch-actions"><button type="button" class="sch-btn danger" id="schClearBtn">Clear imported schedule</button></div>
+      </div>
+    </details>
   </section>
 
   <section id="tab-custom" hidden>
@@ -581,7 +633,7 @@ footer{ margin-top:30px; padding-top:14px; border-top:1px solid var(--line); fon
 
   let currentWeek = 1;
   let checks = {}; // { "w{n}": { dayKey: {done, rpe} } }
-  let settings = { eventEnabled:false, eventDate:null, eventType:'hm', manualStart:null, customSessions:{}, ftp:null };
+  let settings = { eventEnabled:false, eventDate:null, eventType:'hm', manualStart:null, customSessions:{}, ftp:null, datedPlan:null };
 
   // ---------- Supabase: auth + sync ----------
   // Every checkbox tick and effort rating lives in one row per signed-in
@@ -741,7 +793,7 @@ footer{ margin-top:30px; padding-top:14px; border-top:1px solid var(--line); fon
           if (!payload.new || !payload.new.data) return;
           checks = payload.new.data.checks || {};
           settings = Object.assign(settings, payload.new.data.settings || {});
-          renderWeek(); renderCoach(); buildRail();
+          renderWeek(); renderCoach(); buildRail(); renderSchedule();
         })
       .subscribe();
   }
@@ -1571,6 +1623,346 @@ footer{ margin-top:30px; padding-top:14px; border-top:1px solid var(--line); fon
     });
   }
 
+  // ---------- dated schedule (imported plan_YYYY-MM.json) ----------
+  // Stored inside the existing JSONB blob as settings.datedPlan =
+  //   { sessions: { [id]: session }, progress: { [id]: {done, rpe} }, imports: [...] }
+  // so no Supabase schema change is needed. Progress is keyed by session id,
+  // which is what lets a re-import update a session without losing its tick.
+  // <<DATED-PURE-START>>
+  const DATED_DISCS = ['run','bike','swim','sc','brick','rest'];
+  function isoOf(d){ return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
+  function validIso(s){
+    if (typeof s !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
+    const d = new Date(s + 'T00:00:00');
+    return !isNaN(d.getTime()) && isoOf(d) === s;
+  }
+  function dstr(v, max){ return (v === undefined || v === null) ? '' : String(v).slice(0, max || 500); }
+  function validateDatedPlan(raw){
+    const errors = [], sessions = [];
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return { errors:['File is not a plan object.'], sessions:[] };
+    if (raw.schema !== 1) errors.push('Unsupported or missing "schema" (expected 1).');
+    const list = Array.isArray(raw.sessions) ? raw.sessions : [];
+    if (!list.length) errors.push('"sessions" must be a non-empty list.');
+    const seen = new Set();
+    list.forEach((s, i) => {
+      const tag = 'Session ' + (i + 1) + (s && s.id ? ' (' + dstr(s.id, 60) + ')' : '');
+      if (!s || typeof s !== 'object') { errors.push(tag + ': not an object.'); return; }
+      const id = dstr(s.id, 100).trim();
+      if (!id) errors.push(tag + ': missing id.');
+      else if (seen.has(id)) errors.push(tag + ': duplicate id.');
+      seen.add(id);
+      if (!validIso(s.date)) errors.push(tag + ': date must be a real YYYY-MM-DD.');
+      if (!DATED_DISCS.includes(s.discipline)) errors.push(tag + ': discipline must be one of ' + DATED_DISCS.join('/') + '.');
+      if (!dstr(s.title).trim()) errors.push(tag + ': missing title.');
+      let table = [];
+      if (s.table !== undefined && s.table !== null) {
+        if (!Array.isArray(s.table)) errors.push(tag + ': table must be a list.');
+        else table = s.table.map(r => ({
+          set: dstr(r && r.set, 60) || '–', work: dstr(r && r.work, 120) || '–',
+          effort: dstr(r && r.effort, 200) || '–', recovery: dstr(r && r.recovery, 120) || '–',
+        }));
+      }
+      sessions.push({
+        id, date: s.date, slot: dstr(s.slot, 30), order: (typeof s.order === 'number' ? s.order : null),
+        discipline: s.discipline, title: dstr(s.title, 200), detail: dstr(s.detail, 1000),
+        duration: dstr(s.duration, 40) || '—', table, optional: !!s.optional, tag: s.tag === 'race' ? 'race' : '',
+      });
+    });
+    let from = null, to = null;
+    if (!errors.length) {
+      const dates = sessions.map(s => s.date).sort();
+      from = dates[0]; to = dates[dates.length - 1];
+      const rg = raw.range;
+      if (rg && typeof rg === 'object' && (rg.from !== undefined || rg.to !== undefined)) {
+        if (!validIso(rg.from) || !validIso(rg.to) || rg.from > rg.to) errors.push('"range" needs valid from/to dates with from <= to.');
+        else if (from < rg.from || to > rg.to) errors.push('Some sessions fall outside "range".');
+        else { from = rg.from; to = rg.to; }
+      }
+    }
+    return { errors, sessions, from, to, planId: dstr(raw.plan_id, 100), title: dstr(raw.title, 120) };
+  }
+  // Merge by id. Existing sessions dated inside [from, to] that are absent
+  // from the file are removed (that is how dropped sessions disappear);
+  // everything outside the range is left alone.
+  function mergeDatedPlan(existing, v){
+    const cur = (existing && existing.sessions) || {};
+    const prog = (existing && existing.progress) || {};
+    const next = {}, nextProg = {};
+    const added = [], updated = [], unchanged = [], removed = [];
+    const incoming = {};
+    v.sessions.forEach(s => { incoming[s.id] = s; });
+    Object.keys(cur).forEach(id => {
+      if (incoming[id]) return;
+      const s = cur[id];
+      if (s.date >= v.from && s.date <= v.to) { removed.push(s); return; }
+      next[id] = s;
+      if (prog[id]) nextProg[id] = prog[id];
+    });
+    v.sessions.forEach(s => {
+      const old = cur[s.id];
+      if (!old) added.push(s);
+      else if (JSON.stringify(old) !== JSON.stringify(s)) updated.push(s);
+      else unchanged.push(s);
+      next[s.id] = s;
+      if (prog[s.id]) nextProg[s.id] = prog[s.id];
+    });
+    return { sessions: next, progress: nextProg, added, updated, removed, unchanged };
+  }
+  // <<DATED-PURE-END>>
+
+  const SLOT_RANK = { morning:1, am:1, day:2, lunch:3, midday:3, pm:4, afternoon:4, evening:5, eve:5 };
+  const schKickerEl = document.getElementById('schKicker');
+  const schTitleEl = document.getElementById('schTitle');
+  const schDatesEl = document.getElementById('schDates');
+  const schProgressRowEl = document.getElementById('schProgressRow');
+  const schFillEl = document.getElementById('schFill');
+  const schFillLabelEl = document.getElementById('schFillLabel');
+  const schNavEl = document.getElementById('schNav');
+  const schListEl = document.getElementById('schList');
+  const schPreviewEl = document.getElementById('schPreview');
+  const schLogEl = document.getElementById('schLog');
+  const schPanelEl = document.getElementById('schImportPanel');
+  let schWeekStart = null;   // ISO date of the Monday being shown
+  let schPending = null;     // { v, m } awaiting confirmation
+
+  function getDated(){
+    const p = settings.datedPlan;
+    return (p && p.sessions) ? p : { sessions:{}, progress:{}, imports:[] };
+  }
+  function mondayOf(iso){ const d = parseDate(iso); return isoOf(addDays(d, -((d.getDay() + 6) % 7))); }
+  function datedRange(){
+    const dates = Object.values(getDated().sessions).map(s => s.date).sort();
+    return dates.length ? { first: dates[0], last: dates[dates.length - 1], count: dates.length } : null;
+  }
+  function defaultSchWeek(){
+    const r = datedRange();
+    if (!r) return null;
+    const today = isoOf(new Date());
+    return mondayOf(today < r.first ? r.first : (today > r.last ? r.last : today));
+  }
+  function sessionRank(s){ return s.order !== null && s.order !== undefined ? s.order : (SLOT_RANK[(s.slot || '').toLowerCase()] || 9); }
+
+  function schSetProgress(id, patch){
+    if (!settings.datedPlan || !settings.datedPlan.sessions) settings.datedPlan = { sessions:{}, progress:{}, imports:[] };
+    const dp = settings.datedPlan;
+    dp.progress = dp.progress || {};
+    const e = normalizeEntry(dp.progress[id]);
+    Object.assign(e, patch);
+    dp.progress[id] = e;
+    renderSchedule();
+    persistSettings();
+  }
+
+  function schTable(rows){
+    const table = document.createElement('table');
+    table.className = 'session-table mono';
+    const thead = document.createElement('thead');
+    const hr = document.createElement('tr');
+    ['Set','Work','Effort','Recovery'].forEach(h => { const th = document.createElement('th'); th.textContent = h; hr.appendChild(th); });
+    thead.appendChild(hr); table.appendChild(thead);
+    const tbody = document.createElement('tbody');
+    rows.forEach(r => {
+      const tr = document.createElement('tr');
+      [r.set, r.work, r.effort, r.recovery].forEach(v => { const td = document.createElement('td'); td.textContent = v; tr.appendChild(td); });
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    return table;
+  }
+
+  function schCard(s, entry){
+    const card = document.createElement('div');
+    card.className = 'day-card' + (entry.done ? ' done' : '') + (s.optional ? ' optional' : '');
+    card.style.setProperty('--bar-color', 'var(--' + s.discipline + ')');
+    const meta = document.createElement('div');
+    meta.className = 'day-meta';
+    const dn = document.createElement('span'); dn.className = 'dname'; dn.textContent = s.slot || '';
+    meta.appendChild(dn);
+    const body = document.createElement('div');
+    body.className = 'day-body';
+    const top = document.createElement('div'); top.className = 'day-toprow';
+    const left = document.createElement('div'); left.style.minWidth = '0';
+    const badge = document.createElement('span');
+    badge.className = 'badge';
+    badge.style.setProperty('--badge-bg', 'var(--' + s.discipline + '-soft)');
+    badge.style.setProperty('--badge-fg', 'var(--' + s.discipline + ')');
+    badge.textContent = DISC_LABEL[s.discipline] + (s.optional ? ' · optional' : '');
+    const title = document.createElement('p');
+    title.className = 'day-title' + (s.tag === 'race' ? ' race' : '');
+    title.textContent = s.title;
+    left.appendChild(badge); left.appendChild(title);
+    if (s.detail) { const dt = document.createElement('p'); dt.className = 'day-detail'; dt.textContent = s.detail; left.appendChild(dt); }
+    if (s.table && s.table.length) left.appendChild(schTable(s.table));
+    const right = document.createElement('div');
+    right.style.cssText = 'display:flex;flex-direction:column;align-items:flex-end;gap:8px;';
+    const dur = document.createElement('div'); dur.className = 'day-dur mono'; dur.textContent = s.duration;
+    const cb = document.createElement('input');
+    cb.type = 'checkbox'; cb.className = 'check'; cb.checked = entry.done;
+    cb.setAttribute('aria-label', 'Mark done: ' + s.title);
+    cb.addEventListener('change', () => schSetProgress(s.id, { done: cb.checked }));
+    right.appendChild(dur); right.appendChild(cb);
+    top.appendChild(left); top.appendChild(right);
+    body.appendChild(top);
+    if (s.discipline !== 'rest') {
+      const row = document.createElement('div'); row.className = 'rpe-row';
+      const label = document.createElement('span'); label.className = 'rpe-label'; label.textContent = 'Effort';
+      const pills = document.createElement('div'); pills.className = 'rpe-pills';
+      for (let i = 1; i <= 10; i++) {
+        const b = document.createElement('button');
+        b.type = 'button'; b.className = 'rpe-pill' + (entry.rpe === i ? ' active' : ''); b.textContent = String(i);
+        b.setAttribute('aria-label', 'Effort ' + i + ' out of 10');
+        b.addEventListener('click', () => schSetProgress(s.id, { rpe: entry.rpe === i ? null : i }));
+        pills.appendChild(b);
+      }
+      row.appendChild(label); row.appendChild(pills); body.appendChild(row);
+    }
+    card.appendChild(meta); card.appendChild(body);
+    return card;
+  }
+
+  function renderSchedule(){
+    const dp = getDated();
+    const r = datedRange();
+    schListEl.innerHTML = '';
+    if (!r) {
+      schKickerEl.textContent = 'Dated schedule';
+      schTitleEl.textContent = 'No plan imported';
+      schDatesEl.textContent = '';
+      schProgressRowEl.hidden = true; schNavEl.hidden = true;
+      const note = document.createElement('div');
+      note.className = 'intro-note';
+      note.textContent = 'Import a monthly plan file below to see your dated sessions here. The 16-week rotation on the Plan tab is unaffected.';
+      schListEl.appendChild(note);
+    } else {
+      if (!schWeekStart) schWeekStart = defaultSchWeek();
+      const start = parseDate(schWeekStart), end = addDays(start, 6);
+      const last = (dp.imports || [])[(dp.imports || []).length - 1];
+      schKickerEl.textContent = (last && (last.title || last.plan_id)) || 'Dated schedule';
+      schTitleEl.textContent = 'Week of ' + fmtDate(start);
+      schDatesEl.textContent = fmtDate(start) + ' – ' + fmtDate(end) + ' · plan covers ' + fmtDate(parseDate(r.first)) + ' – ' + fmtDate(parseDate(r.last));
+      schNavEl.hidden = false;
+      const todayIso = isoOf(new Date());
+      const byDate = {};
+      Object.values(dp.sessions).forEach(s => { (byDate[s.date] = byDate[s.date] || []).push(s); });
+      let total = 0, done = 0;
+      for (let i = 0; i < 7; i++) {
+        const d = addDays(start, i), iso = isoOf(d);
+        const h = document.createElement('div');
+        h.className = 'sch-day-h' + (iso === todayIso ? ' today' : '');
+        h.textContent = d.toLocaleDateString(undefined, { weekday:'short', day:'numeric', month:'short' });
+        if (iso === todayIso) { const t = document.createElement('span'); t.className = 'sch-today-tag'; t.textContent = 'Today'; h.appendChild(t); }
+        schListEl.appendChild(h);
+        const items = (byDate[iso] || []).slice().sort((a, b) => (sessionRank(a) - sessionRank(b)) || (a.id < b.id ? -1 : 1));
+        if (!items.length) { const e = document.createElement('p'); e.className = 'sch-empty'; e.textContent = 'Nothing scheduled'; schListEl.appendChild(e); continue; }
+        const wrapEl = document.createElement('div');
+        wrapEl.style.cssText = 'display:flex;flex-direction:column;gap:10px;';
+        items.forEach(s => {
+          const entry = normalizeEntry((dp.progress || {})[s.id]);
+          if (!s.optional && s.discipline !== 'rest') { total++; if (entry.done) done++; }
+          wrapEl.appendChild(schCard(s, entry));
+        });
+        schListEl.appendChild(wrapEl);
+      }
+      schProgressRowEl.hidden = false;
+      schFillEl.style.width = (total ? done / total * 100 : 0) + '%';
+      schFillLabelEl.textContent = done + '/' + total;
+    }
+    const imps = dp.imports || [];
+    schLogEl.textContent = imps.length ? 'Last import: ' + (imps[imps.length-1].plan_id || imps[imps.length-1].title || 'plan') + ' · ' + new Date(imps[imps.length-1].at).toLocaleString() : '';
+  }
+
+  function schShowPreview(errors){
+    schPreviewEl.hidden = false;
+    schPreviewEl.innerHTML = '';
+    const box = schPreviewEl;
+    box.className = 'sch-preview' + (errors ? ' error' : '');
+    const add = (tag, text, cls) => { const el = document.createElement(tag); el.textContent = text; if (cls) el.className = cls; box.appendChild(el); return el; };
+    if (errors) {
+      add('p', 'Nothing imported — fix these in the file and try again:', 'sch-counts');
+      const ul = document.createElement('ul');
+      errors.slice(0, 12).forEach(e => { const li = document.createElement('li'); li.textContent = e; ul.appendChild(li); });
+      if (errors.length > 12) { const li = document.createElement('li'); li.textContent = '…and ' + (errors.length - 12) + ' more'; ul.appendChild(li); }
+      box.appendChild(ul);
+      return;
+    }
+    const { v, m } = schPending;
+    add('p', (v.title || v.planId || 'Plan') + ' · ' + v.from + ' to ' + v.to, 'sch-counts');
+    add('p', m.added.length + ' new · ' + m.updated.length + ' updated · ' + m.removed.length + ' removed · ' + m.unchanged.length + ' unchanged');
+    const listOf = (label, arr) => {
+      if (!arr.length) return;
+      add('p', label + ':').style.margin = '6px 0 0';
+      const ul = document.createElement('ul');
+      arr.slice(0, 8).forEach(s => { const li = document.createElement('li'); li.textContent = s.date + ' · ' + s.title; ul.appendChild(li); });
+      if (arr.length > 8) { const li = document.createElement('li'); li.textContent = '…and ' + (arr.length - 8) + ' more'; ul.appendChild(li); }
+      box.appendChild(ul);
+    };
+    listOf('New', m.added); listOf('Updated', m.updated); listOf('Removed', m.removed);
+    const prog = getDated().progress || {};
+    const lost = m.removed.filter(s => prog[s.id] && (prog[s.id].done || typeof prog[s.id].rpe === 'number')).length;
+    if (lost) add('p', lost + ' removed session' + (lost === 1 ? ' has' : 's have') + ' a tick or effort rating that will be discarded.', 'sch-warn');
+    const actions = document.createElement('div'); actions.className = 'sch-actions';
+    const nothing = !m.added.length && !m.updated.length && !m.removed.length;
+    if (nothing) add('p', 'Nothing to change — this plan is already imported.');
+    else {
+      const ok = document.createElement('button'); ok.type = 'button'; ok.className = 'sch-btn primary'; ok.textContent = 'Import';
+      ok.addEventListener('click', schCommit); actions.appendChild(ok);
+    }
+    const cancel = document.createElement('button'); cancel.type = 'button'; cancel.className = 'sch-btn'; cancel.textContent = nothing ? 'Close' : 'Cancel';
+    cancel.addEventListener('click', () => { schPending = null; schPreviewEl.hidden = true; });
+    actions.appendChild(cancel);
+    box.appendChild(actions);
+  }
+
+  function schHandleText(text){
+    schPending = null;
+    let raw;
+    try { raw = JSON.parse(text); } catch (e) { schShowPreview(['Not valid JSON: ' + e.message]); return; }
+    const v = validateDatedPlan(raw);
+    if (v.errors.length) { schShowPreview(v.errors); return; }
+    schPending = { v, m: mergeDatedPlan(getDated(), v) };
+    schShowPreview();
+  }
+
+  function schCommit(){
+    if (!schPending) return;
+    const { v, m } = schPending;
+    const cur = getDated();
+    const imports = (cur.imports || []).concat([{
+      plan_id: v.planId, title: v.title, from: v.from, to: v.to, at: new Date().toISOString(),
+      added: m.added.length, updated: m.updated.length, removed: m.removed.length,
+    }]).slice(-12);
+    settings.datedPlan = { sessions: m.sessions, progress: m.progress, imports };
+    schPending = null;
+    schPreviewEl.hidden = true;
+    schWeekStart = mondayOf(v.from <= isoOf(new Date()) && isoOf(new Date()) <= v.to ? isoOf(new Date()) : v.from);
+    persistSettings();
+    renderSchedule();
+    schPanelEl.open = false;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  document.getElementById('schFile').addEventListener('change', async (ev) => {
+    const f = ev.target.files && ev.target.files[0];
+    ev.target.value = '';
+    if (!f) return;
+    if (f.size > 2 * 1024 * 1024) { schShowPreview(['File is larger than 2 MB — that is not a plan file.']); return; }
+    schHandleText(await f.text());
+  });
+  document.getElementById('schPasteBtn').addEventListener('click', () => {
+    const t = document.getElementById('schPaste').value.trim();
+    if (!t) { schShowPreview(['Paste the plan JSON first.']); return; }
+    schHandleText(t);
+  });
+  document.getElementById('schClearBtn').addEventListener('click', () => {
+    if (!confirm('Remove all imported dated sessions and their ticks/ratings? The 16-week rotation is not affected.')) return;
+    settings.datedPlan = { sessions:{}, progress:{}, imports:[] };
+    schWeekStart = null; schPending = null; schPreviewEl.hidden = true;
+    persistSettings(); renderSchedule();
+  });
+  document.getElementById('schPrev').addEventListener('click', () => { schWeekStart = isoOf(addDays(parseDate(schWeekStart), -7)); renderSchedule(); });
+  document.getElementById('schNext').addEventListener('click', () => { schWeekStart = isoOf(addDays(parseDate(schWeekStart), 7)); renderSchedule(); });
+  document.getElementById('schToday').addEventListener('click', () => { schWeekStart = defaultSchWeek(); renderSchedule(); });
+
   // tabs
   document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -1578,11 +1970,13 @@ footer{ margin-top:30px; padding-top:14px; border-top:1px solid var(--line); fon
       btn.classList.add('active'); btn.setAttribute('aria-selected','true');
       const tab = btn.dataset.tab;
       document.getElementById('tab-plan').hidden = tab !== 'plan';
+      document.getElementById('tab-sched').hidden = tab !== 'sched';
       document.getElementById('tab-custom').hidden = tab !== 'custom';
       document.getElementById('tab-fuel').hidden = tab !== 'fuel';
       document.getElementById('tab-coach').hidden = tab !== 'coach';
       if (tab === 'coach') renderCoach();
       if (tab === 'custom') renderCustomTab();
+      if (tab === 'sched') renderSchedule();
     });
   });
 
@@ -1612,6 +2006,7 @@ footer{ margin-top:30px; padding-top:14px; border-top:1px solid var(--line); fon
     buildPhaseOverview();
     renderWeek();
     renderCoach();
+    renderSchedule();
   }
 
   // ---------- auth bootstrap ----------
