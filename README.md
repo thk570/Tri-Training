@@ -27,6 +27,10 @@ Requires Python 3 (standard library only, no dependencies). Regenerates `plan_da
 - **`dist/tri-half-rotation-plan.html`** — a no-account, fully offline fallback. Open directly in any browser. Progress is stored per-device only (checking things off on your phone won't show up on desktop) — keep this around for when you genuinely have no connectivity, not as your daily driver.
 - **`dist/index.html`** — meant to be hosted as a Claude Artifact (not on GitHub Pages — it depends on a Claude-only `db` capability to sync) so progress syncs across every device you open it from, if you'd rather stay inside Claude for this.
 
+## Schedule tab (dated monthly plans)
+
+The Supabase build has a **Schedule** tab alongside the 16-week rotation. It shows dated sessions imported from a `plan_YYYY-MM.json` file (Import plan → choose file or paste → preview → Import). Re-imports merge by session id and keep ticks and effort ratings. Stored in the same `training_state` row as `settings.datedPlan`, so no database change is needed. Format: see `PLAN_FORMAT.md`; example: `examples/plan_sample.json`. Only `gen_html_supabase.py` carries this tab; the other two builds are unchanged.
+
 ## Supabase setup
 
 The synced build needs one table in your Supabase project, with row-level security so you can only ever read/write your own data:
