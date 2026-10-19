@@ -99,6 +99,7 @@ html = r"""<!doctype html>
   --race:#F0776A; --race-soft:#3C201C;
   --shadow: 0 1px 2px rgba(0,0,0,.3), 0 12px 28px -14px rgba(0,0,0,.55);
 }
+html{ -webkit-text-size-adjust:100%; text-size-adjust:100%; }
 *{box-sizing:border-box;}
 body{
   margin:0; background:var(--bg); color:var(--ink);
@@ -173,18 +174,41 @@ button{font:inherit;}
 .day-body{ flex:1; min-width:0; padding-left:6px; }
 .day-toprow{ display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
 .badge{ display:inline-flex; align-items:center; gap:5px; font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; padding:3px 8px; border-radius:99px; color:var(--badge-fg); background:var(--badge-bg); margin-bottom:5px; }
-.day-title{ margin:0 0 3px; font-size:16.5px; font-weight:700; line-height:1.25; }
+.day-title{ margin:0 0 4px; font-size:16.5px; font-weight:700; line-height:1.3; overflow-wrap:anywhere; }
 .day-title.race{ color:var(--race); }
-.day-detail{ margin:0; font-size:13.5px; color:var(--ink-dim); line-height:1.45; }
-.day-dur{ font-size:12px; color:var(--ink-faint); flex:0 0 auto; padding-top:1px; }
+.day-body > .day-detail{ margin-top:2px; }
+.day-detail{ margin:0; font-size:14px; color:var(--ink-dim); line-height:1.5; overflow-wrap:anywhere; }
+.day-dur{ font-size:12px; color:var(--ink-faint); flex:0 0 auto; max-width:92px; text-align:right; line-height:1.3; padding-top:1px; font-family:inherit; text-wrap:balance; }
 
 /* Session structure table */
-.session-table{ width:100%; margin-top:8px; border-collapse:collapse; font-size:11.5px; }
-.session-table th{ text-align:left; font-size:9.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-faint); font-weight:700; padding:0 8px 4px 0; border-bottom:1px solid var(--line); }
-.session-table td{ padding:4px 8px 4px 0; color:var(--ink-dim); border-bottom:1px solid var(--line); white-space:normal; }
+/* The table sits full-width under the card's header row (not beside the
+   duration/tick column) and every cell wraps, so nothing is clipped. One
+   font size / line height everywhere; the stacked layout below takes over
+   on phones. */
+.session-table{ width:100%; margin-top:10px; border-collapse:collapse; font-size:13px; line-height:1.45; }
+table.session-table.mono{ font-family:inherit; font-variant-numeric:tabular-nums; }
+.session-table th{ text-align:left; font-size:10px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-faint); font-weight:700; padding:0 10px 5px 0; border-bottom:1px solid var(--line); }
+.session-table td{ padding:6px 10px 6px 0; vertical-align:top; color:var(--ink-dim); border-bottom:1px solid var(--line); white-space:normal; overflow-wrap:anywhere; }
 .session-table tr:last-child td{ border-bottom:none; }
-.session-table td:first-child, .session-table th:first-child{ color:var(--ink); font-weight:600; white-space:nowrap; padding-right:6px; }
-.session-table td:nth-child(2){ color:var(--ink); font-weight:600; white-space:nowrap; }
+.session-table td:first-child, .session-table th:first-child{ color:var(--ink); font-weight:600; }
+.session-table td:nth-child(2){ color:var(--ink); font-weight:600; }
+@media (max-width:560px){
+  .day-body .rpe-row{ flex-direction:column; align-items:flex-start; gap:5px; }
+  .day-body .rpe-pills{ display:grid; grid-template-columns:repeat(10,1fr); gap:3px; width:100%; }
+  .day-body .rpe-pill{ width:100%; height:28px; font-size:11px; }
+  .session-table thead{ display:none; }
+  .session-table, .session-table tbody{ display:block; }
+  .session-table tr{ display:block; padding:8px 0; border-bottom:1px solid var(--line); }
+  .session-table tr:last-child{ border-bottom:none; padding-bottom:0; }
+  .session-table td{ display:block; padding:0; border:none; }
+  .session-table td + td{ margin-top:1px; }
+  .session-table td.empty{ display:none; }
+  .session-table td:nth-child(1){ color:var(--ink); font-weight:700; }
+  .session-table td:nth-child(3)::before, .session-table td:nth-child(4)::before{
+    content:attr(data-label); display:inline-block; min-width:62px; margin-right:6px;
+    font-size:10px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--ink-faint);
+  }
+}
 .check{
   appearance:none; -webkit-appearance:none; width:24px; height:24px; border-radius:7px; border:2px solid var(--line-strong);
   background:var(--surface); cursor:pointer; flex:0 0 auto; display:grid; place-items:center; margin-top:1px;
@@ -960,9 +984,17 @@ footer{ margin-top:30px; padding-top:14px; border-top:1px solid var(--line); fon
     thead.innerHTML = '<tr><th>Set</th><th>Work</th><th>Effort</th><th>Recovery</th></tr>';
     table.appendChild(thead);
     const tbody = document.createElement('tbody');
+    const LABELS = ['Set', 'Work', 'Effort', 'Rest'];
     rows.forEach(r => {
       const tr = document.createElement('tr');
-      tr.innerHTML = '<td>' + r.set + '</td><td>' + r.work + '</td><td>' + r.effort + '</td><td>' + r.recovery + '</td>';
+      [r.set, r.work, r.effort, r.recovery].forEach((v, i) => {
+        const td = document.createElement('td');
+        const txt = (v === undefined || v === null || String(v).trim() === '') ? '–' : String(v);
+        td.textContent = txt;
+        td.setAttribute('data-label', LABELS[i]);
+        if (txt === '–' && i > 1) td.className = 'empty';
+        tr.appendChild(td);
+      });
       tbody.appendChild(tr);
     });
     table.appendChild(tbody);
@@ -1018,8 +1050,7 @@ footer{ margin-top:30px; padding-top:14px; border-top:1px solid var(--line); fon
       const detail = document.createElement('p');
       detail.className = 'day-detail';
       detail.textContent = dEff.detail;
-      left.appendChild(badge); left.appendChild(title); left.appendChild(detail);
-      if (dEff.table && dEff.table.length) left.appendChild(buildSessionTable(dEff.table));
+      left.appendChild(badge); left.appendChild(title);
 
       const right = document.createElement('div');
       right.style.cssText = 'display:flex;flex-direction:column;align-items:flex-end;gap:8px;';
@@ -1035,6 +1066,8 @@ footer{ margin-top:30px; padding-top:14px; border-top:1px solid var(--line); fon
 
       top.appendChild(left); top.appendChild(right);
       body.appendChild(top);
+      if (dEff.detail) body.appendChild(detail);
+      if (dEff.table && dEff.table.length) body.appendChild(buildSessionTable(dEff.table));
 
       if (dEff.discipline !== 'rest') {
         const rpeRow = document.createElement('div');
@@ -1799,23 +1832,6 @@ footer{ margin-top:30px; padding-top:14px; border-top:1px solid var(--line); fon
     persistSettings();
   }
 
-  function schTable(rows){
-    const table = document.createElement('table');
-    table.className = 'session-table mono';
-    const thead = document.createElement('thead');
-    const hr = document.createElement('tr');
-    ['Set','Work','Effort','Recovery'].forEach(h => { const th = document.createElement('th'); th.textContent = h; hr.appendChild(th); });
-    thead.appendChild(hr); table.appendChild(thead);
-    const tbody = document.createElement('tbody');
-    rows.forEach(r => {
-      const tr = document.createElement('tr');
-      [r.set, r.work, r.effort, r.recovery].forEach(v => { const td = document.createElement('td'); td.textContent = v; tr.appendChild(td); });
-      tbody.appendChild(tr);
-    });
-    table.appendChild(tbody);
-    return table;
-  }
-
   function schCard(s, entry){
     const card = document.createElement('div');
     card.className = 'day-card' + (entry.done ? ' done' : '') + (s.optional ? ' optional' : '');
@@ -1837,8 +1853,6 @@ footer{ margin-top:30px; padding-top:14px; border-top:1px solid var(--line); fon
     title.className = 'day-title' + (s.tag === 'race' ? ' race' : '');
     title.textContent = s.title;
     left.appendChild(badge); left.appendChild(title);
-    if (s.detail) { const dt = document.createElement('p'); dt.className = 'day-detail'; dt.textContent = s.detail; left.appendChild(dt); }
-    if (s.table && s.table.length) left.appendChild(schTable(s.table));
     const right = document.createElement('div');
     right.style.cssText = 'display:flex;flex-direction:column;align-items:flex-end;gap:8px;';
     const dur = document.createElement('div'); dur.className = 'day-dur mono'; dur.textContent = s.duration;
@@ -1849,6 +1863,8 @@ footer{ margin-top:30px; padding-top:14px; border-top:1px solid var(--line); fon
     right.appendChild(dur); right.appendChild(cb);
     top.appendChild(left); top.appendChild(right);
     body.appendChild(top);
+    if (s.detail) { const dt = document.createElement('p'); dt.className = 'day-detail'; dt.textContent = s.detail; body.appendChild(dt); }
+    if (s.table && s.table.length) body.appendChild(buildSessionTable(s.table));
     if (s.discipline !== 'rest') {
       const row = document.createElement('div'); row.className = 'rpe-row';
       const label = document.createElement('span'); label.className = 'rpe-label'; label.textContent = 'Effort';
