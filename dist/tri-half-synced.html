@@ -389,6 +389,27 @@ footer{ margin-top:30px; padding-top:14px; border-top:1px solid var(--line); fon
 .sch-warn{ color:var(--race); font-size:13px; margin:6px 0; }
 .sch-actions{ display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
 .sch-log{ font-size:12px; color:var(--ink-faint); margin-top:12px; }
+
+/* ---- session / day notes + export ---- */
+.sch-notes{ margin-top:10px; }
+.sch-notes-toggle{ border:none; background:none; padding:6px 0; color:var(--accent); font-weight:600; font-size:13.5px; cursor:pointer; }
+.sch-notes-toggle:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+.sch-chip-label{ font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-faint); font-weight:700; margin:8px 0 4px; }
+.sch-chips{ display:flex; flex-wrap:wrap; gap:6px; }
+.sch-chip{ border:1px solid var(--line-strong); background:var(--bg); color:var(--ink-dim); border-radius:99px; padding:6px 12px; font-size:13px; font-weight:600; cursor:pointer; }
+.sch-chip.active{ background:var(--accent); border-color:var(--accent); color:var(--accent-ink); }
+.sch-chip:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+.sch-note-input{ display:block; width:100%; min-height:88px; margin-top:10px; padding:10px; border:1px solid var(--line-strong); border-radius:9px; background:var(--bg); color:var(--ink); font:16px/1.4 "Source Sans 3",-apple-system,sans-serif; resize:vertical; }
+.sch-note-text{ margin:4px 0 0; font-size:14px; line-height:1.5; color:var(--ink); white-space:pre-wrap; overflow-wrap:anywhere; }
+.sch-tags{ margin:6px 0 0; font-size:12.5px; color:var(--ink-faint); }
+.sch-status{ display:inline-block; margin-left:6px; font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; padding:3px 8px; border-radius:99px; vertical-align:top; }
+.sch-status.st-skipped{ background:var(--race-soft); color:var(--race); }
+.sch-status.st-partial, .sch-status.st-swapped{ background:var(--bike-soft); color:var(--bike); }
+.sch-daynote{ margin:2px 0 0; }
+.sch-dates{ display:flex; gap:10px; flex-wrap:wrap; margin:10px 0 4px; }
+.sch-dates label{ display:flex; flex-direction:column; gap:3px; font-size:12px; color:var(--ink-faint); font-weight:600; }
+.sch-dates input{ font:16px "Source Sans 3",-apple-system,sans-serif; padding:7px 9px; border:1px solid var(--line-strong); border-radius:9px; background:var(--bg); color:var(--ink); }
+.sch-export-text{ display:block; width:100%; min-height:260px; max-height:70vh; margin-top:10px; padding:10px; border:1px solid var(--line-strong); border-radius:9px; background:var(--bg); color:var(--ink); font:12.5px/1.5 "IBM Plex Mono", ui-monospace, monospace; resize:vertical; }
 </style>
 
 </head>
@@ -509,6 +530,28 @@ footer{ margin-top:30px; padding-top:14px; border-top:1px solid var(--line); fon
       </div>
     </div>
     <div class="day-list" id="schList" style="display:block"></div>
+
+    <details class="panel" id="schExportPanel">
+      <summary>Export notes for PT</summary>
+      <div class="panel-body">
+        <p>Copy this text into the PT chat (or download it) alongside your Strava <b>activities.csv</b>. It lists every planned session in the date range with its status, effort, tags and notes.</p>
+        <div class="sch-dates">
+          <label>From<input type="date" id="schExFrom"></label>
+          <label>To<input type="date" id="schExTo"></label>
+        </div>
+        <div class="sch-actions">
+          <button type="button" class="sch-btn" id="schExWhole">Whole plan to date</button>
+          <button type="button" class="sch-btn" id="schEx7">Last 7 days</button>
+          <button type="button" class="sch-btn" id="schEx28">Last 4 weeks</button>
+        </div>
+        <textarea id="schExText" class="sch-export-text" readonly spellcheck="false" aria-label="Notes export preview"></textarea>
+        <div class="sch-actions">
+          <button type="button" class="sch-btn primary" id="schExCopy">Copy all</button>
+          <button type="button" class="sch-btn" id="schExDl">Download .md</button>
+        </div>
+        <div class="sch-log" id="schExMsg"></div>
+      </div>
+    </details>
 
     <details class="panel" id="schImportPanel">
       <summary>Import plan</summary>
@@ -806,6 +849,10 @@ footer{ margin-top:30px; padding-top:14px; border-top:1px solid var(--line); fon
     }
   }
 
+  // Timestamps of this tab's own saves: the realtime channel echoes them back,
+  // and applying an older echo over text typed since would lose it.
+  const ownSaves = [];
+
   function subscribeRemoteState(userId){
     // Defensive: if a previous (e.g. racing) call already opened a channel,
     // tear it down before opening another — a channel can only be
@@ -815,9 +862,13 @@ footer{ margin-top:30px; padding-top:14px; border-top:1px solid var(--line); fon
       .on('postgres_changes', { event: '*', schema: 'public', table: 'training_state', filter: 'user_id=eq.' + userId },
         (payload) => {
           if (!payload.new || !payload.new.data) return;
+          if (payload.new.updated_at && ownSaves.includes(Date.parse(payload.new.updated_at))) return;
           checks = payload.new.data.checks || {};
           settings = Object.assign(settings, payload.new.data.settings || {});
-          renderWeek(); renderCoach(); buildRail(); renderSchedule();
+          const ae = document.activeElement;
+          const typing = !!(ae && ae.classList && ae.classList.contains('sch-note-input'));
+          renderWeek(); renderCoach(); buildRail();
+          if (!typing) renderSchedule();
         })
       .subscribe();
   }
@@ -828,7 +879,9 @@ footer{ margin-top:30px; padding-top:14px; border-top:1px solid var(--line); fon
     // Small debounce: rapid taps (e.g. changing an RPE rating) collapse into one write.
     saveTimer = setTimeout(async () => {
       try {
-        await sb.from('training_state').upsert({ user_id: currentUser.id, data: { checks, settings }, updated_at: new Date().toISOString() });
+        const stamp = new Date().toISOString();
+        ownSaves.push(Date.parse(stamp)); if (ownSaves.length > 20) ownSaves.shift();
+        await sb.from('training_state').upsert({ user_id: currentUser.id, data: { checks, settings }, updated_at: stamp });
       } catch (e) { /* offline — the next successful save carries the latest state anyway */ }
     }, 400);
   }
@@ -1760,8 +1813,29 @@ footer{ margin-top:30px; padding-top:14px; border-top:1px solid var(--line); fon
 
   function getDated(){
     const p = settings.datedPlan;
-    return (p && p.sessions) ? p : { sessions:{}, progress:{}, imports:[] };
+    return (p && p.sessions) ? p : { sessions:{}, progress:{}, imports:[], dayNotes:{} };
   }
+  function ensureDated(){
+    if (!settings.datedPlan || !settings.datedPlan.sessions) settings.datedPlan = { sessions:{}, progress:{}, imports:[], dayNotes:{} };
+    const dp = settings.datedPlan;
+    dp.progress = dp.progress || {}; dp.dayNotes = dp.dayNotes || {}; dp.imports = dp.imports || [];
+    return dp;
+  }
+
+  // Per-session log: { done, rpe, status, tags, note }. status/tags/note are the
+  // free-text "notes for the PT" layer; everything is keyed by session id.
+  const SCH_STATUSES = [['partial','Partial'], ['skipped','Skipped'], ['swapped','Swapped']];
+  const SCH_TAGS = [['knee','Knee niggle'], ['tired','Tired / heavy legs'], ['sick','Unwell'], ['no-time','Short on time'], ['strong','Felt strong']];
+  const SCH_TAG_LABEL = Object.fromEntries(SCH_TAGS);
+  function normProg(v){
+    const e = normalizeEntry(v);
+    const o = (v && typeof v === 'object') ? v : {};
+    e.status = SCH_STATUSES.some(x => x[0] === o.status) ? o.status : '';
+    e.tags = Array.isArray(o.tags) ? o.tags.filter(t => SCH_TAG_LABEL[t]) : [];
+    e.note = typeof o.note === 'string' ? o.note : '';
+    return e;
+  }
+  function hasLog(v){ const e = normProg(v); return !!(e.done || e.rpe !== null || e.status || e.tags.length || e.note.trim()); }
   function mondayOf(iso){ const d = parseDate(iso); return isoOf(addDays(d, -((d.getDay() + 6) % 7))); }
   function datedRange(){
     const dates = Object.values(getDated().sessions).map(s => s.date).sort();
@@ -1775,15 +1849,96 @@ footer{ margin-top:30px; padding-top:14px; border-top:1px solid var(--line); fon
   }
   function sessionRank(s){ return s.order !== null && s.order !== undefined ? s.order : (SLOT_RANK[(s.slot || '').toLowerCase()] || 9); }
 
-  function schSetProgress(id, patch){
-    if (!settings.datedPlan || !settings.datedPlan.sessions) settings.datedPlan = { sessions:{}, progress:{}, imports:[] };
-    const dp = settings.datedPlan;
-    dp.progress = dp.progress || {};
-    const e = normalizeEntry(dp.progress[id]);
+  const schOpenNotes = new Set();   // session ids whose notes editor is open
+  const schOpenDays = new Set();    // ISO dates whose day-note editor is open
+  let schFocus = null;              // 'n:<id>' or 'd:<iso>' to focus after the next render
+
+  function schWrite(id, patch, rerender){
+    const dp = ensureDated();
+    const e = normProg(dp.progress[id]);
     Object.assign(e, patch);
-    dp.progress[id] = e;
-    renderSchedule();
+    if (e.done && e.status === 'skipped') e.status = '';
+    if (hasLog(e)) dp.progress[id] = e; else delete dp.progress[id];
+    if (rerender) renderSchedule();
     persistSettings();
+    schRefreshExport();
+  }
+  function schSetProgress(id, patch){ schWrite(id, patch, true); }
+  function schWriteDay(iso, text){
+    const dp = ensureDated();
+    if (text.trim()) dp.dayNotes[iso] = text; else delete dp.dayNotes[iso];
+    persistSettings();
+    schRefreshExport();
+  }
+
+  function schNoteArea(value, max, label, focusKey, onInput){
+    const ta = document.createElement('textarea');
+    ta.className = 'sch-note-input';
+    ta.maxLength = max;
+    ta.value = value;
+    ta.placeholder = 'How did it go? Knee, pace, why you skipped or swapped…';
+    ta.setAttribute('aria-label', label);
+    ta.addEventListener('input', () => onInput(ta.value));
+    if (schFocus === focusKey) { schFocus = null; setTimeout(() => ta.focus(), 0); }
+    return ta;
+  }
+  function schChip(text, active, onClick){
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'sch-chip' + (active ? ' active' : ''); b.textContent = text;
+    b.setAttribute('aria-pressed', active ? 'true' : 'false');
+    b.addEventListener('click', onClick);
+    return b;
+  }
+  function schNotesBlock(s, entry){
+    const wrap = document.createElement('div'); wrap.className = 'sch-notes';
+    const open = schOpenNotes.has(s.id);
+    const has = !!(entry.status || entry.tags.length || entry.note.trim());
+    const btn = document.createElement('button');
+    btn.type = 'button'; btn.className = 'sch-notes-toggle';
+    btn.textContent = open ? 'Hide notes' : (has ? 'Edit notes' : 'Add notes');
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    btn.addEventListener('click', () => {
+      if (open) schOpenNotes.delete(s.id); else { schOpenNotes.add(s.id); schFocus = 'n:' + s.id; }
+      renderSchedule();
+    });
+    wrap.appendChild(btn);
+    if (!open) {
+      if (entry.tags.length) { const p = document.createElement('p'); p.className = 'sch-tags'; p.textContent = entry.tags.map(t => SCH_TAG_LABEL[t]).join(' · '); wrap.appendChild(p); }
+      if (entry.note.trim()) { const p = document.createElement('p'); p.className = 'sch-note-text'; p.textContent = entry.note; wrap.appendChild(p); }
+      return wrap;
+    }
+    const l1 = document.createElement('div'); l1.className = 'sch-chip-label'; l1.textContent = 'What happened'; wrap.appendChild(l1);
+    const row1 = document.createElement('div'); row1.className = 'sch-chips';
+    SCH_STATUSES.forEach(([k, label]) => row1.appendChild(schChip(label, entry.status === k, () => {
+      const next = entry.status === k ? '' : k;
+      schSetProgress(s.id, next === 'skipped' ? { status: next, done: false } : { status: next });
+    })));
+    wrap.appendChild(row1);
+    const l2 = document.createElement('div'); l2.className = 'sch-chip-label'; l2.textContent = 'Tags'; wrap.appendChild(l2);
+    const row2 = document.createElement('div'); row2.className = 'sch-chips';
+    SCH_TAGS.forEach(([k, label]) => row2.appendChild(schChip(label, entry.tags.includes(k), () => {
+      schSetProgress(s.id, { tags: entry.tags.includes(k) ? entry.tags.filter(t => t !== k) : entry.tags.concat([k]) });
+    })));
+    wrap.appendChild(row2);
+    wrap.appendChild(schNoteArea(entry.note, 2000, 'Notes for ' + s.title, 'n:' + s.id, v => schWrite(s.id, { note: v }, false)));
+    return wrap;
+  }
+  function schDayNoteBlock(iso, dp){
+    const note = (dp.dayNotes || {})[iso] || '';
+    const open = schOpenDays.has(iso);
+    const wrap = document.createElement('div'); wrap.className = 'sch-notes sch-daynote';
+    const btn = document.createElement('button');
+    btn.type = 'button'; btn.className = 'sch-notes-toggle';
+    btn.textContent = open ? 'Hide day note' : (note.trim() ? 'Edit day note' : '+ Day note');
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    btn.addEventListener('click', () => {
+      if (open) schOpenDays.delete(iso); else { schOpenDays.add(iso); schFocus = 'd:' + iso; }
+      renderSchedule();
+    });
+    wrap.appendChild(btn);
+    if (open) wrap.appendChild(schNoteArea(note, 1000, 'Day note for ' + iso, 'd:' + iso, v => schWriteDay(iso, v)));
+    else if (note.trim()) { const p = document.createElement('p'); p.className = 'sch-note-text'; p.textContent = note; wrap.appendChild(p); }
+    return wrap;
   }
 
   function schCard(s, entry){
@@ -1806,7 +1961,9 @@ footer{ margin-top:30px; padding-top:14px; border-top:1px solid var(--line); fon
     const title = document.createElement('p');
     title.className = 'day-title' + (s.tag === 'race' ? ' race' : '');
     title.textContent = s.title;
-    left.appendChild(badge); left.appendChild(title);
+    left.appendChild(badge);
+    if (entry.status) { const sp = document.createElement('span'); sp.className = 'sch-status st-' + entry.status; sp.textContent = (SCH_STATUSES.find(x => x[0] === entry.status) || [0, entry.status])[1]; left.appendChild(sp); }
+    left.appendChild(title);
     const right = document.createElement('div');
     right.style.cssText = 'display:flex;flex-direction:column;align-items:flex-end;gap:8px;';
     const dur = document.createElement('div'); dur.className = 'day-dur mono'; dur.textContent = s.duration;
@@ -1832,6 +1989,7 @@ footer{ margin-top:30px; padding-top:14px; border-top:1px solid var(--line); fon
       }
       row.appendChild(label); row.appendChild(pills); body.appendChild(row);
     }
+    body.appendChild(schNotesBlock(s, entry));
     card.appendChild(meta); card.appendChild(body);
     return card;
   }
@@ -1869,21 +2027,25 @@ footer{ margin-top:30px; padding-top:14px; border-top:1px solid var(--line); fon
         if (iso === todayIso) { const t = document.createElement('span'); t.className = 'sch-today-tag'; t.textContent = 'Today'; h.appendChild(t); }
         schListEl.appendChild(h);
         const items = (byDate[iso] || []).slice().sort((a, b) => (sessionRank(a) - sessionRank(b)) || (a.id < b.id ? -1 : 1));
-        if (!items.length) { const e = document.createElement('p'); e.className = 'sch-empty'; e.textContent = 'Nothing scheduled'; schListEl.appendChild(e); continue; }
-        const wrapEl = document.createElement('div');
-        wrapEl.style.cssText = 'display:flex;flex-direction:column;gap:10px;';
-        items.forEach(s => {
-          const entry = normalizeEntry((dp.progress || {})[s.id]);
-          if (!s.optional && s.discipline !== 'rest') { total++; if (entry.done) done++; }
-          wrapEl.appendChild(schCard(s, entry));
-        });
-        schListEl.appendChild(wrapEl);
+        if (!items.length) { const e = document.createElement('p'); e.className = 'sch-empty'; e.textContent = 'Nothing scheduled'; schListEl.appendChild(e); }
+        else {
+          const wrapEl = document.createElement('div');
+          wrapEl.style.cssText = 'display:flex;flex-direction:column;gap:10px;';
+          items.forEach(s => {
+            const entry = normProg((dp.progress || {})[s.id]);
+            if (!s.optional && s.discipline !== 'rest') { total++; if (entry.done) done++; }
+            wrapEl.appendChild(schCard(s, entry));
+          });
+          schListEl.appendChild(wrapEl);
+        }
+        schListEl.appendChild(schDayNoteBlock(iso, dp));
       }
       schProgressRowEl.hidden = false;
       schFillEl.style.width = (total ? done / total * 100 : 0) + '%';
       schFillLabelEl.textContent = done + '/' + total;
     }
     const imps = dp.imports || [];
+    schRefreshExport();
     schLogEl.textContent = imps.length ? 'Last import: ' + (imps[imps.length-1].plan_id || imps[imps.length-1].title || 'plan') + ' · ' + new Date(imps[imps.length-1].at).toLocaleString() : '';
   }
 
@@ -1914,8 +2076,8 @@ footer{ margin-top:30px; padding-top:14px; border-top:1px solid var(--line); fon
     };
     listOf('New', m.added); listOf('Updated', m.updated); listOf('Removed', m.removed);
     const prog = getDated().progress || {};
-    const lost = m.removed.filter(s => prog[s.id] && (prog[s.id].done || typeof prog[s.id].rpe === 'number')).length;
-    if (lost) add('p', lost + ' removed session' + (lost === 1 ? ' has' : 's have') + ' a tick or effort rating that will be discarded.', 'sch-warn');
+    const lost = m.removed.filter(s => prog[s.id] && hasLog(prog[s.id])).length;
+    if (lost) add('p', lost + ' removed session' + (lost === 1 ? ' has' : 's have') + ' a tick, effort rating or note that will be discarded.', 'sch-warn');
     const actions = document.createElement('div'); actions.className = 'sch-actions';
     const nothing = !m.added.length && !m.updated.length && !m.removed.length;
     if (nothing) add('p', 'Nothing to change — this plan is already imported.');
@@ -1947,7 +2109,7 @@ footer{ margin-top:30px; padding-top:14px; border-top:1px solid var(--line); fon
       plan_id: v.planId, title: v.title, from: v.from, to: v.to, at: new Date().toISOString(),
       added: m.added.length, updated: m.updated.length, removed: m.removed.length,
     }]).slice(-12);
-    settings.datedPlan = { sessions: m.sessions, progress: m.progress, imports };
+    settings.datedPlan = { sessions: m.sessions, progress: m.progress, imports, dayNotes: cur.dayNotes || {} };
     schPending = null;
     schPreviewEl.hidden = true;
     schWeekStart = mondayOf(v.from <= isoOf(new Date()) && isoOf(new Date()) <= v.to ? isoOf(new Date()) : v.from);
@@ -1970,14 +2132,130 @@ footer{ margin-top:30px; padding-top:14px; border-top:1px solid var(--line); fon
     schHandleText(t);
   });
   document.getElementById('schClearBtn').addEventListener('click', () => {
-    if (!confirm('Remove all imported dated sessions and their ticks/ratings? The 16-week rotation is not affected.')) return;
-    settings.datedPlan = { sessions:{}, progress:{}, imports:[] };
+    if (!confirm('Remove all imported dated sessions with their ticks, ratings and notes? Export your notes first if you still need them. The 16-week rotation is not affected.')) return;
+    settings.datedPlan = { sessions:{}, progress:{}, imports:[], dayNotes:{} };
     schWeekStart = null; schPending = null; schPreviewEl.hidden = true;
     persistSettings(); renderSchedule();
   });
   document.getElementById('schPrev').addEventListener('click', () => { schWeekStart = isoOf(addDays(parseDate(schWeekStart), -7)); renderSchedule(); });
   document.getElementById('schNext').addEventListener('click', () => { schWeekStart = isoOf(addDays(parseDate(schWeekStart), 7)); renderSchedule(); });
   document.getElementById('schToday').addEventListener('click', () => { schWeekStart = defaultSchWeek(); renderSchedule(); });
+
+  // ---------- notes export (for the PT) ----------
+  // Pure text builder: one block per day, every planned session in the range
+  // with status / effort / tags / note, plus day notes. Matches Strava by date + slot.
+  const WD_ABBR = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  function pad2(n){ return String(n).padStart(2, '0'); }
+  function buildNotesExport(dp, from, to, todayIso, label, nowText){
+    const sessions = Object.values(dp.sessions || {}).filter(s => s.date >= from && s.date <= to);
+    const prog = dp.progress || {}, dn = dp.dayNotes || {};
+    const days = {};
+    sessions.forEach(s => { (days[s.date] = days[s.date] || { s: [], n: '' }).s.push(s); });
+    Object.keys(dn).forEach(d => {
+      if (d >= from && d <= to && String(dn[d]).trim()) (days[d] = days[d] || { s: [], n: '' }).n = String(dn[d]).trim();
+    });
+    const statusOf = (s, e) => {
+      if (e.status === 'skipped' && !e.done) return 'skipped';
+      if (e.status === 'swapped') return 'swapped';
+      if (e.status === 'partial') return 'partial';
+      if (e.done) return 'done';
+      return s.date > todayIso ? 'upcoming' : 'no record';
+    };
+    const counts = { done:0, partial:0, skipped:0, swapped:0, 'no record':0 };
+    let due = 0, optDue = 0, optDone = 0;
+    sessions.forEach(s => {
+      if (s.discipline === 'rest' || s.date > todayIso) return;
+      const st = statusOf(s, normProg(prog[s.id]));
+      if (s.optional) { optDue++; if (st === 'done' || st === 'partial') optDone++; return; }
+      due++; counts[st]++;
+    });
+    const out = [];
+    out.push('# Training notes: ' + from + ' to ' + to);
+    out.push((label ? 'Plan: ' + label + ' | ' : '') + 'exported ' + nowText);
+    out.push('Read with Strava activities.csv: match by date and slot (Morning / Day / Lunch / Evening). Status is done, partial, skipped, swapped, upcoming or no record (nothing logged). RPE is the athlete\'s own 1-10 rating.');
+    out.push('');
+    out.push('Summary (sessions due so far, excluding rest and optional): ' + due + ' | done ' + counts.done + ' | partial ' + counts.partial + ' | skipped ' + counts.skipped + ' | swapped ' + counts.swapped + ' | no record ' + counts['no record'] + '. Optional sessions done: ' + optDone + ' of ' + optDue + '.');
+    const dates = Object.keys(days).sort();
+    if (!dates.length) { out.push(''); out.push('(No sessions or notes in this date range.)'); return out.join('\n'); }
+    dates.forEach(d => {
+      const g = days[d];
+      out.push('');
+      out.push('## ' + WD_ABBR[parseDate(d).getDay()] + ' ' + d);
+      g.s.slice().sort((a, b) => (sessionRank(a) - sessionRank(b)) || (a.id < b.id ? -1 : 1)).forEach(s => {
+        const e = normProg(prog[s.id]);
+        const bits = [s.slot || '-', DISC_LABEL[s.discipline] + (s.optional ? ' (optional)' : ''), s.title];
+        if (s.duration && s.duration !== '—') bits.push('planned ' + s.duration);
+        bits.push(statusOf(s, e));
+        if (e.rpe !== null) bits.push('RPE ' + e.rpe);
+        out.push('- ' + bits.join(' | ') + ' | id ' + s.id);
+        if (e.tags.length) out.push('  Tags: ' + e.tags.map(t => SCH_TAG_LABEL[t]).join(', '));
+        if (e.note.trim()) out.push('  Note: ' + e.note.trim().split(/\r?\n/).join('\n    '));
+      });
+      if (g.n) out.push('Day note: ' + g.n.split(/\r?\n/).join('\n  '));
+    });
+    return out.join('\n');
+  }
+
+  const schExPanelEl = document.getElementById('schExportPanel');
+  const schExFromEl = document.getElementById('schExFrom');
+  const schExToEl = document.getElementById('schExTo');
+  const schExTextEl = document.getElementById('schExText');
+  const schExMsgEl = document.getElementById('schExMsg');
+  function schExSetRange(from, to){ schExFromEl.value = from; schExToEl.value = to; schRefreshExport(); }
+  function schExWhole(){
+    const r = datedRange(); if (!r) return;
+    const today = isoOf(new Date());
+    schExSetRange(r.first, today < r.first ? r.last : (today > r.last ? r.last : today));
+  }
+  function schExLastDays(n){
+    const today = isoOf(new Date());
+    schExSetRange(isoOf(addDays(parseDate(today), -(n - 1))), today);
+  }
+  function schRefreshExport(){
+    if (!schExPanelEl.open) return;
+    const dp = getDated();
+    if (!datedRange()) { schExTextEl.value = 'Import a plan first; there is nothing to export yet.'; return; }
+    if (!schExFromEl.value || !schExToEl.value) { schExWhole(); return; }
+    let from = schExFromEl.value, to = schExToEl.value;
+    if (from > to) { const t = from; from = to; to = t; }
+    const last = (dp.imports || [])[(dp.imports || []).length - 1];
+    const now = new Date();
+    const nowText = isoOf(now) + ' ' + pad2(now.getHours()) + ':' + pad2(now.getMinutes());
+    const next = buildNotesExport(dp, from, to, isoOf(now), (last && (last.title || last.plan_id)) || '', nowText);
+    if (schExTextEl.value === next) return;   // nothing changed: keep the "Copied" message
+    schExTextEl.value = next;
+    schExTextEl.style.height = 'auto';
+    schExTextEl.style.height = Math.min(schExTextEl.scrollHeight + 4, Math.round(window.innerHeight * 0.7)) + 'px';
+    schExMsgEl.textContent = '';
+  }
+  schExPanelEl.addEventListener('toggle', schRefreshExport);
+  schExFromEl.addEventListener('change', schRefreshExport);
+  schExToEl.addEventListener('change', schRefreshExport);
+  document.getElementById('schExWhole').addEventListener('click', schExWhole);
+  document.getElementById('schEx7').addEventListener('click', () => schExLastDays(7));
+  document.getElementById('schEx28').addEventListener('click', () => schExLastDays(28));
+  document.getElementById('schExCopy').addEventListener('click', async () => {
+    const text = schExTextEl.value;
+    try {
+      await navigator.clipboard.writeText(text);
+      schExMsgEl.textContent = 'Copied. Paste it into the PT chat.';
+    } catch (e) {
+      try {
+        schExTextEl.focus(); schExTextEl.select();
+        schExMsgEl.textContent = document.execCommand('copy') ? 'Copied. Paste it into the PT chat.' : 'Text selected. Use Copy from your keyboard menu.';
+      } catch (e2) { schExMsgEl.textContent = 'Text selected. Use Copy from your keyboard menu.'; }
+    }
+  });
+  document.getElementById('schExDl').addEventListener('click', () => {
+    try {
+      const blob = new Blob([schExTextEl.value], { type: 'text/markdown' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'training_notes_' + (schExFromEl.value || 'from') + '_to_' + (schExToEl.value || 'to') + '.md';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    } catch (e) { schExMsgEl.textContent = 'Could not start the download. Use Copy all instead.'; }
+  });
 
   // tabs
   document.querySelectorAll('.tab-btn').forEach(btn => {
