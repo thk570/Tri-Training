@@ -120,7 +120,7 @@ button{font:inherit;}
   padding:13px 14px; box-shadow:var(--shadow); position:relative; overflow:hidden;
 }
 .day-card::before{ content:""; position:absolute; left:0; top:0; bottom:0; width:4px; background:var(--bar-color,var(--ink-faint)); }
-.day-card.done{ opacity:.62; }
+.day-card.done, .day-card.skipped{ opacity:.62; }
 .day-card.optional{ border-style:dashed; box-shadow:none; }
 .day-meta{ flex:0 0 54px; display:flex; flex-direction:column; align-items:flex-start; gap:2px; padding-left:6px; }
 .day-meta .dname{ font-family:"Big Shoulders Display"; font-weight:700; font-size:16px; line-height:1.1; }
@@ -1831,6 +1831,7 @@ footer{ margin-top:30px; padding-top:14px; border-top:1px solid var(--line); fon
     const e = normalizeEntry(v);
     const o = (v && typeof v === 'object') ? v : {};
     e.status = SCH_STATUSES.some(x => x[0] === o.status) ? o.status : '';
+    if (e.done && e.status === 'skipped') e.status = '';
     e.tags = Array.isArray(o.tags) ? o.tags.filter(t => SCH_TAG_LABEL[t]) : [];
     e.note = typeof o.note === 'string' ? o.note : '';
     return e;
@@ -1857,7 +1858,8 @@ footer{ margin-top:30px; padding-top:14px; border-top:1px solid var(--line); fon
     const dp = ensureDated();
     const e = normProg(dp.progress[id]);
     Object.assign(e, patch);
-    if (e.done && e.status === 'skipped') e.status = '';
+    if (patch.status === 'skipped') e.done = false;          // marking skipped unticks
+    else if (e.done && e.status === 'skipped') e.status = '';  // ticking clears skipped
     if (hasLog(e)) dp.progress[id] = e; else delete dp.progress[id];
     if (rerender) renderSchedule();
     persistSettings();
@@ -1943,7 +1945,7 @@ footer{ margin-top:30px; padding-top:14px; border-top:1px solid var(--line); fon
 
   function schCard(s, entry){
     const card = document.createElement('div');
-    card.className = 'day-card' + (entry.done ? ' done' : '') + (s.optional ? ' optional' : '');
+    card.className = 'day-card' + (entry.done ? ' done' : '') + (entry.status === 'skipped' && !entry.done ? ' skipped' : '') + (s.optional ? ' optional' : '');
     card.style.setProperty('--bar-color', 'var(--' + s.discipline + ')');
     const meta = document.createElement('div');
     meta.className = 'day-meta';
