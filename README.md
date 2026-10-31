@@ -31,6 +31,12 @@ Requires Python 3 (standard library only, no dependencies). Regenerates `plan_da
 
 The Supabase build has a **Schedule** tab alongside the 16-week rotation. It shows dated sessions imported from a `plan_YYYY-MM.json` file (Import plan → choose file or paste → preview → Import). Re-imports merge by session id and keep ticks and effort ratings. Stored in the same `training_state` row as `settings.datedPlan`, so no database change is needed. Format: see `PLAN_FORMAT.md`; example: `examples/plan_sample.json`. Only `gen_html_supabase.py` carries this tab; the other two builds are unchanged.
 
+### Notes for the PT
+
+Every Schedule session has an **Add notes** button: a status (partial / skipped / swapped), tags (knee niggle, tired, unwell, short on time, felt strong) and free text, next to the existing tick and effort rating. Each day also has a **+ Day note** for unplanned activity or context. All of it is stored by session id / date in the same `settings.datedPlan` blob, so it survives plan re-imports.
+
+**Export notes for PT** (panel under the week) previews the whole text for a date range (presets: whole plan to date, last 7 days, last 4 weeks) and offers **Copy all** or **Download .md**. Paste or attach it with Strava's `activities.csv`. Format: `NOTES_FORMAT.md`.
+
 ## Supabase setup
 
 The synced build needs one table in your Supabase project, with row-level security so you can only ever read/write your own data:
